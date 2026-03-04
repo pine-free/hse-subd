@@ -6,5 +6,8 @@ services:
       POSTGRES_DB: "postgres"
       POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "postgres"
+    volumes:
+      - ./lib/postgres/01-apply-migrations.sh:/docker-entrypoint-initdb.d/01-apply-migrations.sh:ro
+      - ../migrations/versions:/docker-entrypoint-initdb.d/migrations:ro
     ports:
       - "5432:5432"
