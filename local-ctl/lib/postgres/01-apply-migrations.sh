@@ -2,7 +2,7 @@
 set -e
 
 echo "Running migrations on database: $POSTGRES_DB as $POSTGRES_USER"
-export PGPASSWD = "$POSTGRES_PASSWORD"
+export PGPASSWD="$POSTGRES_PASSWORD"
 
 for file in /docker-entrypoint-initdb.d/migrations/*.sql; do
   echo "> Applying $file"
