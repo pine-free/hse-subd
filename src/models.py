@@ -131,7 +131,7 @@ class Tables(Base):
     closing_time: Mapped[Optional[datetime.datetime]]
 
 class SessionTables(Base):
-    __tablename__ = "Session_Tables"
+    __tablename__ = "session_tables"
 
     session_to_table_ID: Mapped[int] = mapped_column(primary_key=True)
     session_ID: Mapped[int] = mapped_column(ForeignKey("Session.session_ID"))

@@ -5,7 +5,7 @@ CREATE TABLE alembic_version (
     CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
 );
 
--- Running upgrade  -> cc5de6cc8919
+-- Running upgrade  -> e8313f0fd0ec
 
 CREATE TABLE "Card" (
     "card_ID" SERIAL NOT NULL, 
@@ -128,7 +128,7 @@ CREATE TABLE "Orders" (
     FOREIGN KEY("staff_ID") REFERENCES "Bartenders" ("staff_ID")
 );
 
-CREATE TABLE "Session_Tables" (
+CREATE TABLE session_tables (
     "session_to_table_ID" SERIAL NOT NULL, 
     "session_ID" INTEGER NOT NULL, 
     "table_ID" INTEGER NOT NULL, 
@@ -151,7 +151,7 @@ CREATE TABLE "Split_Order_by_Card" (
     FOREIGN KEY("order_ID") REFERENCES "Orders" ("order_ID")
 );
 
-INSERT INTO alembic_version (version_num) VALUES ('cc5de6cc8919') RETURNING alembic_version.version_num;
+INSERT INTO alembic_version (version_num) VALUES ('e8313f0fd0ec') RETURNING alembic_version.version_num;
 
 COMMIT;
 
