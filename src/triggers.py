@@ -1,6 +1,7 @@
 from alembic_utils.pg_trigger import PGTrigger
 from alembic_utils.pg_function import PGFunction
 
+# == Dealer check ==
 ensure_dealer_correct = PGFunction(
     schema='public',
     signature='ensure_dealer_correct()',
@@ -36,4 +37,40 @@ ensure_dealer_trigger = PGTrigger(
     """,
     on_entity='public.session_tables',
     is_constraint=True
+)
+
+# == Update cards on bid ==
+
+update_card_bid = PGFunction(
+    schema='public',
+    signature='update_card_bid()',
+    definition='''
+    RETURNS TRIGGER AS $update_card_bid$
+    DECLARE
+        card_balance integer;
+    BEGIN
+        IF (TG_OP = 'INSERT') THEN
+            SELECT balance FROM card INTO card_balance;
+            IF (NEW.bid_amount > card_balance) THEN
+                RAISE EXCEPTION 'Cannot bet more money than the card has';
+            END IF;
+            IF (NEW.money_gain = 0) THEN
+                UPDATE card SET balance = balance - NEW.bid_amount WHERE card_ID = NEW.card_ID;
+            ELSE
+                UPDATE card SET balance = balance + NEW.money_gain WHERE card_ID = NEW.card_ID;
+            END IF;
+        END IF;
+    END;
+    $update_card_bid$ LANGUAGE plpgsql
+    '''
+)
+
+ensure_dealer_trigger = PGTrigger(
+    schema="public",
+    signature = "update_card_bid_trigger",
+    definition="""
+        BEFORE INSERT ON public.card_bid_within_session
+        FOR EACH ROW EXECUTE FUNCTION update_card_bid();
+    """,
+    on_entity='public.card_bid_within_session',
 )
