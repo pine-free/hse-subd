@@ -2,7 +2,7 @@ from __future__ import annotations
 import datetime
 
 from typing import Optional
-from sqlalchemy import String, ForeignKey, Integer, CheckConstraint
+from sqlalchemy import String, ForeignKey, CheckConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 class Base(DeclarativeBase):
@@ -76,7 +76,6 @@ class Card(Base):
     __tablename__ = "card"
 
     card_id: Mapped[int] = mapped_column(primary_key=True)
-    user_id: Mapped[Optional[int]]
     balance: Mapped[Optional[int]]
 
 class CardsToClientsDispenser(Base):

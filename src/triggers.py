@@ -23,6 +23,7 @@ ensure_dealer_correct = PGFunction(
                 END IF;
                 
             END IF;
+            RETURN NULL;
         END;
     $ensure_dealer$ LANGUAGE plpgsql;
     '''
@@ -60,6 +61,7 @@ update_card_bid = PGFunction(
                 UPDATE card SET balance = balance + NEW.money_gain WHERE card_ID = NEW.card_ID;
             END IF;
         END IF;
+        RETURN NULL;
     END;
     $update_card_bid$ LANGUAGE plpgsql
     '''
@@ -69,7 +71,7 @@ update_card_bid_trigger = PGTrigger(
     schema="public",
     signature = "update_card_bid_trigger",
     definition="""
-        BEFORE INSERT ON public.card_bid_within_session
+        AFTER INSERT ON public.card_bid_within_session
         FOR EACH ROW EXECUTE FUNCTION update_card_bid();
     """,
     on_entity='public.card_bid_within_session',

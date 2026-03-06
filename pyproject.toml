@@ -8,7 +8,10 @@ dependencies = [
     "alembic>=1.18.4",
     "alembic-utils>=0.8.8",
     "psycopg>=3.3.3",
+    "pytest>=9.0.2",
+    "ruff>=0.15.5",
     "sqlalchemy>=2.0.48",
+    "testcontainers>=4.14.1",
 ]
 
 [dependency-groups]
