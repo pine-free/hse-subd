@@ -1,9 +1,19 @@
+import sqlalchemy
+import sqlalchemy.exc
 import time
 import pytest
 import datetime
 from contextlib import contextmanager
 
-from src.models import Card, Session as GameSession, CardBidWithnSession, Base
+from src.models import (
+    Card,
+    Session as GameSession,
+    CardBidWithnSession,
+    Base,
+    GameTypes,
+    SessionTables,
+    Tables,
+)
 from sqlalchemy.orm import Session, sessionmaker
 from typing import Generator, Callable
 from sqlalchemy import URL, Engine, create_engine, text
@@ -14,15 +24,20 @@ def db_engine(postgres_url: URL) -> Engine:
     e = create_engine(postgres_url)
     return e
 
+
 @pytest.fixture()
 def cleanup_tables(db_session: Callable[[], Session]) -> Callable[[list[Base]], None]:
     def _cleanup(types: list[Base]) -> None:
         with db_session() as session:
             session.begin()
             for t in types:
-                session.execute(text(f"TRUNCATE TABLE {t.__tablename__} RESTART IDENTITY CASCADE;"))
+                session.execute(
+                    text(f"TRUNCATE TABLE {t.__tablename__} RESTART IDENTITY CASCADE;")
+                )
             session.commit()
+
     return _cleanup
+
 
 @pytest.fixture()
 def db_session(db_engine: Engine) -> Callable[[], Generator[Session]]:
@@ -43,9 +58,10 @@ def db_session(db_engine: Engine) -> Callable[[], Generator[Session]]:
     return _get_session
 
 
-def test_card_insert_bid_loss(db_session: Callable[[], Session], cleanup_tables: Callable[list[Base], None]) -> None:
+def test_card_insert_bid_loss(
+    db_session: Callable[[], Session], cleanup_tables: Callable[list[Base], None]
+) -> None:
     with db_session() as session:
-
         session.begin()
         card = Card(balance=100)
         game_session = GameSession(
@@ -70,9 +86,11 @@ def test_card_insert_bid_loss(db_session: Callable[[], Session], cleanup_tables:
         session.commit()
     cleanup_tables([CardBidWithnSession, Card, GameSession])
 
-def test_card_insert_bid_win(db_session: Callable[[], Session], cleanup_tables: Callable[list[Base], None]) -> None:
-    with db_session() as session:
 
+def test_card_insert_bid_win(
+    db_session: Callable[[], Session], cleanup_tables: Callable[list[Base], None]
+) -> None:
+    with db_session() as session:
         session.begin()
         card = Card(balance=100)
         game_session = GameSession(
@@ -96,3 +114,36 @@ def test_card_insert_bid_win(db_session: Callable[[], Session], cleanup_tables: 
         assert card.balance == 120
         session.commit()
     cleanup_tables([CardBidWithnSession, Card, GameSession])
+
+
+def test_game_unsupervised(
+    db_session: Callable[[], Session], cleanup_tables: Callable[list[Base], None]
+) -> None:
+    with db_session() as session:
+        session.begin()
+        game_type = GameTypes(game_type="poker", is_supervised=True)
+        game_session = GameSession(
+            start_time=datetime.datetime(2020, 12, 1),
+            end_time=datetime.datetime(2020, 12, 2),
+        )
+        session.add_all([game_type, game_session])
+        session.commit()
+
+        session.begin()
+        table = Tables(
+            type_id=game_type.type_id,
+            balance=0,
+            openning_time=datetime.datetime(2020, 12, 1),
+            closing_time=datetime.datetime(2020, 12, 2),
+        )
+        session.add(table)
+        session.commit()
+
+        session.begin()
+        session_table = SessionTables(
+            session_id=game_session.session_id, table_id=table.table_id
+        )
+        session.add(session_table)
+        with pytest.raises(sqlalchemy.exc.ProgrammingError):
+            session.commit()
+    cleanup_tables([GameTypes, GameSession])
