@@ -5,7 +5,7 @@ CREATE TABLE alembic_version (
     CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
 );
 
--- Running upgrade  -> 118ace94455d
+-- Running upgrade  -> 60302bfc9b4d
 
 CREATE TABLE card (
     card_id SERIAL NOT NULL, 
@@ -150,9 +150,9 @@ CREATE TABLE split_order_by_card (
     FOREIGN KEY(order_id) REFERENCES orders (order_id)
 );
 
-INSERT INTO alembic_version (version_num) VALUES ('118ace94455d') RETURNING alembic_version.version_num;
+INSERT INTO alembic_version (version_num) VALUES ('60302bfc9b4d') RETURNING alembic_version.version_num;
 
--- Running upgrade 118ace94455d -> 7af387664104
+-- Running upgrade 60302bfc9b4d -> ded5e6e813e6
 
 CREATE FUNCTION "public"."ensure_dealer_correct"() RETURNS TRIGGER AS $ensure_dealer$
     DECLARE
@@ -184,11 +184,7 @@ CREATE FUNCTION "public"."update_card_bid"() RETURNS TRIGGER AS $update_card_bid
             IF (NEW.bid_amount > card_balance) THEN
                 RAISE EXCEPTION 'Cannot bet more money than the card has';
             END IF;
-            IF (NEW.money_gain = 0) THEN
-                UPDATE card SET balance = balance - NEW.bid_amount WHERE card_id = NEW.card_id;
-            ELSE
-                UPDATE card SET balance = balance + NEW.money_gain WHERE card_id = NEW.card_id;
-            END IF;
+            UPDATE card SET balance = balance - NEW.bid_amount + NEW.money_gain;
         END IF;
         RETURN NULL;
     END;
@@ -198,7 +194,7 @@ CREATE CONSTRAINT TRIGGER "ensure_dealer_trigger" AFTER INSERT ON public.session
 
 CREATE TRIGGER "update_card_bid_trigger" AFTER INSERT ON public.card_bid_within_session FOR EACH ROW EXECUTE FUNCTION update_card_bid();
 
-UPDATE alembic_version SET version_num='7af387664104' WHERE alembic_version.version_num = '118ace94455d';
+UPDATE alembic_version SET version_num='ded5e6e813e6' WHERE alembic_version.version_num = '60302bfc9b4d';
 
 COMMIT;
 

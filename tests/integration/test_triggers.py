@@ -1,18 +1,17 @@
 import sqlalchemy
 import sqlalchemy.exc
-import time
 import pytest
 import datetime
-from contextlib import contextmanager
+from contextlib import contextmanager, closing
 
 from src.models import (
+    Base,
     Card,
     Session as GameSession,
     CardBidWithnSession,
-    Base,
     GameTypes,
     SessionTables,
-    Tables,
+    Tables,Staff, Bartenders, Dealers
 )
 from sqlalchemy.orm import Session, sessionmaker
 from typing import Generator, Callable
@@ -57,17 +56,43 @@ def db_session(db_engine: Engine) -> Callable[[], Generator[Session]]:
 
     return _get_session
 
+class DbObjectsFactory:
+    def __init__(self) -> None:
+        pass
 
-def test_card_insert_bid_loss(
+
+    @staticmethod
+    def get_game_session(
+        start_time: datetime.datetime =datetime.datetime(2020, 12, 1),
+        end_time: datetime.datetime =datetime.datetime(2020, 12, 2),
+    ) -> GameSession:
+        return GameSession(start_time=start_time, end_time=end_time)
+
+    @staticmethod
+    def get_table(
+        type: GameTypes,
+        balance: int = 0,
+        opening_time: datetime.datetime = datetime.datetime(2020, 12, 1),
+        closing_time: datetime.datetime = datetime.datetime(2020, 12, 2),
+    ) -> Tables:
+        return Tables(type_id=type.type_id, balance=balance, openning_time=opening_time, closing_time=closing_time)
+
+    @staticmethod
+    def get_staff(
+        name: str = "maria",
+        surname: str = "sklodowskaya-curie",
+        address: str = "nowhere",
+        age: int = 23
+    ) -> Staff:
+        return Staff(name=name, surname=surname, address=address, age=age)
+
+def test_card_insert_bid_invalid(
     db_session: Callable[[], Session], cleanup_tables: Callable[list[Base], None]
 ) -> None:
     with db_session() as session:
         session.begin()
         card = Card(balance=100)
-        game_session = GameSession(
-            start_time=datetime.datetime(2020, 12, 1),
-            end_time=datetime.datetime(2020, 12, 2),
-        )
+        game_session = DbObjectsFactory.get_game_session()
         session.add_all([card, game_session])
         session.commit()
 
@@ -75,15 +100,12 @@ def test_card_insert_bid_loss(
         bid = CardBidWithnSession(
             session_id=game_session.session_id,
             card_id=card.card_id,
-            bid_amount=30,
+            bid_amount=120,
             money_gain=0,
         )
         session.add(bid)
-        session.commit()
-
-        session.begin()
-        assert card.balance == 70
-        session.commit()
+        with pytest.raises(sqlalchemy.exc.ProgrammingError):
+            session.commit()
     cleanup_tables([CardBidWithnSession, Card, GameSession])
 
 
@@ -93,10 +115,7 @@ def test_card_insert_bid_win(
     with db_session() as session:
         session.begin()
         card = Card(balance=100)
-        game_session = GameSession(
-            start_time=datetime.datetime(2020, 12, 1),
-            end_time=datetime.datetime(2020, 12, 2),
-        )
+        game_session = DbObjectsFactory.get_game_session()
         session.add_all([card, game_session])
         session.commit()
 
@@ -111,31 +130,23 @@ def test_card_insert_bid_win(
         session.commit()
 
         session.begin()
-        assert card.balance == 120
+        assert card.balance == 70
         session.commit()
     cleanup_tables([CardBidWithnSession, Card, GameSession])
 
 
-def test_game_unsupervised(
+def test_game_unsupervised_wrong(
     db_session: Callable[[], Session], cleanup_tables: Callable[list[Base], None]
 ) -> None:
     with db_session() as session:
         session.begin()
         game_type = GameTypes(game_type="poker", is_supervised=True)
-        game_session = GameSession(
-            start_time=datetime.datetime(2020, 12, 1),
-            end_time=datetime.datetime(2020, 12, 2),
-        )
+        game_session = DbObjectsFactory.get_game_session()
         session.add_all([game_type, game_session])
         session.commit()
 
         session.begin()
-        table = Tables(
-            type_id=game_type.type_id,
-            balance=0,
-            openning_time=datetime.datetime(2020, 12, 1),
-            closing_time=datetime.datetime(2020, 12, 2),
-        )
+        table = DbObjectsFactory.get_table(game_type)
         session.add(table)
         session.commit()
 
@@ -147,3 +158,32 @@ def test_game_unsupervised(
         with pytest.raises(sqlalchemy.exc.ProgrammingError):
             session.commit()
     cleanup_tables([GameTypes, GameSession])
+
+def test_game_supervised_wrong(
+    db_session: Callable[[], Session], cleanup_tables: Callable[list[Base], None]
+) -> None:
+    with db_session() as session:
+        session.begin()
+        game_type = GameTypes(game_type="gambling_roll", is_supervised=False)
+        game_session = DbObjectsFactory.get_game_session()
+        staff = DbObjectsFactory.get_staff()
+        session.add_all([game_type, game_session, staff])
+        session.commit()
+
+        session.begin()
+
+        table = DbObjectsFactory.get_table(game_type)
+        bartender = Dealers(staff_id=staff.staff_id, qualification="yes")
+        session.add_all([table, bartender])
+        session.commit()
+
+        session.begin()
+        session_table = SessionTables(
+            session_id=game_session.session_id, table_id=table.table_id, staff_id=bartender.staff_id
+        )
+        session.add(session_table)
+        with pytest.raises(sqlalchemy.exc.ProgrammingError):
+            session.commit()
+    cleanup_tables([GameTypes, GameSession])
+
+    

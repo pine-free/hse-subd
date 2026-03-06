@@ -1,8 +1,8 @@
 """triggers
 
-Revision ID: 7af387664104
-Revises: 118ace94455d
-Create Date: 2026-03-06 19:38:33.433381
+Revision ID: ded5e6e813e6
+Revises: 60302bfc9b4d
+Create Date: 2026-03-06 19:54:39.701385
 
 """
 from typing import Sequence, Union
@@ -15,8 +15,8 @@ from alembic_utils.pg_trigger import PGTrigger
 from sqlalchemy import text as sql_text
 
 # revision identifiers, used by Alembic.
-revision: str = '7af387664104'
-down_revision: Union[str, Sequence[str], None] = '118ace94455d'
+revision: str = 'ded5e6e813e6'
+down_revision: Union[str, Sequence[str], None] = '60302bfc9b4d'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -34,7 +34,7 @@ def upgrade() -> None:
     public_update_card_bid = PGFunction(
         schema="public",
         signature="update_card_bid()",
-        definition="RETURNS TRIGGER AS $update_card_bid$\n    DECLARE\n        card_balance integer;\n    BEGIN\n        IF (TG_OP = 'INSERT') THEN\n            SELECT balance FROM card INTO card_balance;\n            IF (NEW.bid_amount > card_balance) THEN\n                RAISE EXCEPTION 'Cannot bet more money than the card has';\n            END IF;\n            IF (NEW.money_gain = 0) THEN\n                UPDATE card SET balance = balance - NEW.bid_amount WHERE card_id = NEW.card_id;\n            ELSE\n                UPDATE card SET balance = balance + NEW.money_gain WHERE card_id = NEW.card_id;\n            END IF;\n        END IF;\n        RETURN NULL;\n    END;\n    $update_card_bid$ LANGUAGE plpgsql"
+        definition="RETURNS TRIGGER AS $update_card_bid$\n    DECLARE\n        card_balance integer;\n    BEGIN\n        IF (TG_OP = 'INSERT') THEN\n            SELECT balance FROM card INTO card_balance;\n            IF (NEW.bid_amount > card_balance) THEN\n                RAISE EXCEPTION 'Cannot bet more money than the card has';\n            END IF;\n            UPDATE card SET balance = balance - NEW.bid_amount + NEW.money_gain;\n        END IF;\n        RETURN NULL;\n    END;\n    $update_card_bid$ LANGUAGE plpgsql"
     )
     op.create_entity(public_update_card_bid)
 
@@ -83,7 +83,7 @@ def downgrade() -> None:
     public_update_card_bid = PGFunction(
         schema="public",
         signature="update_card_bid()",
-        definition="RETURNS TRIGGER AS $update_card_bid$\n    DECLARE\n        card_balance integer;\n    BEGIN\n        IF (TG_OP = 'INSERT') THEN\n            SELECT balance FROM card INTO card_balance;\n            IF (NEW.bid_amount > card_balance) THEN\n                RAISE EXCEPTION 'Cannot bet more money than the card has';\n            END IF;\n            IF (NEW.money_gain = 0) THEN\n                UPDATE card SET balance = balance - NEW.bid_amount WHERE card_id = NEW.card_id;\n            ELSE\n                UPDATE card SET balance = balance + NEW.money_gain WHERE card_id = NEW.card_id;\n            END IF;\n        END IF;\n        RETURN NULL;\n    END;\n    $update_card_bid$ LANGUAGE plpgsql"
+        definition="RETURNS TRIGGER AS $update_card_bid$\n    DECLARE\n        card_balance integer;\n    BEGIN\n        IF (TG_OP = 'INSERT') THEN\n            SELECT balance FROM card INTO card_balance;\n            IF (NEW.bid_amount > card_balance) THEN\n                RAISE EXCEPTION 'Cannot bet more money than the card has';\n            END IF;\n            UPDATE card SET balance = balance - NEW.bid_amount + NEW.money_gain;\n        END IF;\n        RETURN NULL;\n    END;\n    $update_card_bid$ LANGUAGE plpgsql"
     )
     op.drop_entity(public_update_card_bid)
 

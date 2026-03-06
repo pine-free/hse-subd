@@ -51,15 +51,11 @@ update_card_bid = PGFunction(
         card_balance integer;
     BEGIN
         IF (TG_OP = 'INSERT') THEN
-            SELECT balance FROM card INTO card_balance;
+            SELECT balance FROM card INTO card_balance WHERE card_id = NEW.card_id;
             IF (NEW.bid_amount > card_balance) THEN
                 RAISE EXCEPTION 'Cannot bet more money than the card has';
             END IF;
-            IF (NEW.money_gain = 0) THEN
-                UPDATE card SET balance = balance - NEW.bid_amount WHERE card_id = NEW.card_id;
-            ELSE
-                UPDATE card SET balance = balance + NEW.money_gain WHERE card_id = NEW.card_id;
-            END IF;
+            UPDATE card SET balance = balance - NEW.bid_amount + NEW.money_gain WHERE card_id = NEW.card_id;
         END IF;
         RETURN NULL;
     END;
@@ -75,4 +71,37 @@ update_card_bid_trigger = PGTrigger(
         FOR EACH ROW EXECUTE FUNCTION update_card_bid();
     """,
     on_entity='public.card_bid_within_session',
+)
+
+update_card_order = PGFunction(
+    schema='public',
+    signature='update_card_order()',
+    definition='''
+    RETURNS TRIGGER AS $update_card_order$
+    DECLARE
+        card_balance integer;
+        order_total integer;
+    BEGIN
+        IF (TG_OP = 'INSERT') THEN
+            SELECT balance FROM card INTO card_balance WHERE card_id = NEW.card_id;
+            SELECT total FROM orders INTO order_total WHERE order_id = NEW.order_id;
+            IF (order_total > card_balance) THEN
+                RAISE EXCEPTION 'Cannot place an order with more total than the card has';
+            END IF;
+            UPDATE card SET balance = balance - order_total WHERE card_id = NEW.card_id;
+        END IF;
+        RETURN NULL;
+    END;
+    $update_card_order$ LANGUAGE plpgsql
+    '''
+)
+
+update_card_order_trigger = PGTrigger(
+    schema="public",
+    signature = "update_card_order_trigger",
+    definition="""
+        AFTER INSERT ON public.split_order_by_card
+        FOR EACH ROW EXECUTE FUNCTION update_card_order();
+    """,
+    on_entity='public.split_order_by_card',
 )
