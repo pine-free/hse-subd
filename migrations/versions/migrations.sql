@@ -5,7 +5,7 @@ CREATE TABLE alembic_version (
     CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
 );
 
--- Running upgrade  -> 60302bfc9b4d
+-- Running upgrade  -> c68eaa978c68
 
 CREATE TABLE card (
     card_id SERIAL NOT NULL, 
@@ -143,16 +143,17 @@ CREATE TABLE split_order_by_card (
     card_id INTEGER NOT NULL, 
     order_id INTEGER NOT NULL, 
     drink_id INTEGER NOT NULL, 
-    quantity INTEGER, 
+    quantity INTEGER NOT NULL, 
     PRIMARY KEY (split_order_id), 
+    CHECK (quantity >= 1), 
     FOREIGN KEY(card_id) REFERENCES card (card_id), 
     FOREIGN KEY(drink_id) REFERENCES drinks (drink_id), 
     FOREIGN KEY(order_id) REFERENCES orders (order_id)
 );
 
-INSERT INTO alembic_version (version_num) VALUES ('60302bfc9b4d') RETURNING alembic_version.version_num;
+INSERT INTO alembic_version (version_num) VALUES ('c68eaa978c68') RETURNING alembic_version.version_num;
 
--- Running upgrade 60302bfc9b4d -> ded5e6e813e6
+-- Running upgrade c68eaa978c68 -> 49131ce749fc
 
 CREATE FUNCTION "public"."ensure_dealer_correct"() RETURNS TRIGGER AS $ensure_dealer$
     DECLARE
@@ -180,21 +181,43 @@ CREATE FUNCTION "public"."update_card_bid"() RETURNS TRIGGER AS $update_card_bid
         card_balance integer;
     BEGIN
         IF (TG_OP = 'INSERT') THEN
-            SELECT balance FROM card INTO card_balance;
+            SELECT balance FROM card INTO card_balance WHERE card_id = NEW.card_id;
             IF (NEW.bid_amount > card_balance) THEN
                 RAISE EXCEPTION 'Cannot bet more money than the card has';
             END IF;
-            UPDATE card SET balance = balance - NEW.bid_amount + NEW.money_gain;
+            UPDATE card SET balance = balance - NEW.bid_amount + NEW.money_gain WHERE card_id = NEW.card_id;
         END IF;
         RETURN NULL;
     END;
     $update_card_bid$ LANGUAGE plpgsql;
 
+CREATE FUNCTION "public"."update_card_order"() RETURNS TRIGGER AS $update_card_order$
+    DECLARE
+        card_balance integer;
+        order_total integer;
+    BEGIN
+        IF (TG_OP = 'INSERT') THEN
+            SELECT balance FROM card INTO card_balance WHERE card_id = NEW.card_id;
+            SELECT price * NEW.quantity FROM drinks INTO order_total WHERE drink_id = NEW.drink_id;
+
+            IF (order_total > card_balance) THEN
+                RAISE EXCEPTION 'Cannot place an order with more total than the card has';
+            END IF;
+
+            UPDATE orders SET total = total + order_total WHERE order_id = NEW.order_id;
+            UPDATE card SET balance = balance - order_total WHERE card_id = NEW.card_id;
+        END IF;
+        RETURN NULL;
+    END;
+    $update_card_order$ LANGUAGE plpgsql;
+
 CREATE CONSTRAINT TRIGGER "ensure_dealer_trigger" AFTER INSERT ON public.session_tables FOR EACH ROW EXECUTE FUNCTION ensure_dealer_correct();
 
 CREATE TRIGGER "update_card_bid_trigger" AFTER INSERT ON public.card_bid_within_session FOR EACH ROW EXECUTE FUNCTION update_card_bid();
 
-UPDATE alembic_version SET version_num='ded5e6e813e6' WHERE alembic_version.version_num = '60302bfc9b4d';
+CREATE TRIGGER "update_card_order_trigger" AFTER INSERT ON public.split_order_by_card FOR EACH ROW EXECUTE FUNCTION update_card_order();
+
+UPDATE alembic_version SET version_num='49131ce749fc' WHERE alembic_version.version_num = 'c68eaa978c68';
 
 COMMIT;
 

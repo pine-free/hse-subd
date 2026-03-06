@@ -90,12 +90,13 @@ class CardsToClientsDispenser(Base):
 
 class SplitOrderByCard(Base):
     __tablename__ = "split_order_by_card"
+    __table_args__ = (CheckConstraint("quantity >= 1"),)
 
     split_order_id: Mapped[int] = mapped_column(primary_key=True)
     card_id: Mapped[int] = mapped_column(ForeignKey("card.card_id"))
     order_id: Mapped[int] = mapped_column(ForeignKey("orders.order_id"))
     drink_id: Mapped[int] = mapped_column(ForeignKey("drinks.drink_id"))
-    quantity: Mapped[Optional[int]]
+    quantity: Mapped[int]
 
 class Session(Base):
     __tablename__ = "session"

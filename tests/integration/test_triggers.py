@@ -11,7 +11,13 @@ from src.models import (
     CardBidWithnSession,
     GameTypes,
     SessionTables,
-    Tables,Staff, Bartenders, Dealers
+    Tables,
+    Staff,
+    Bartenders,
+    Dealers,
+    Orders,
+    Drinks,
+    SplitOrderByCard,
 )
 from sqlalchemy.orm import Session, sessionmaker
 from typing import Generator, Callable
@@ -56,15 +62,15 @@ def db_session(db_engine: Engine) -> Callable[[], Generator[Session]]:
 
     return _get_session
 
+
 class DbObjectsFactory:
     def __init__(self) -> None:
         pass
 
-
     @staticmethod
     def get_game_session(
-        start_time: datetime.datetime =datetime.datetime(2020, 12, 1),
-        end_time: datetime.datetime =datetime.datetime(2020, 12, 2),
+        start_time: datetime.datetime = datetime.datetime(2020, 12, 1),
+        end_time: datetime.datetime = datetime.datetime(2020, 12, 2),
     ) -> GameSession:
         return GameSession(start_time=start_time, end_time=end_time)
 
@@ -75,16 +81,39 @@ class DbObjectsFactory:
         opening_time: datetime.datetime = datetime.datetime(2020, 12, 1),
         closing_time: datetime.datetime = datetime.datetime(2020, 12, 2),
     ) -> Tables:
-        return Tables(type_id=type.type_id, balance=balance, openning_time=opening_time, closing_time=closing_time)
+        return Tables(
+            type_id=type.type_id,
+            balance=balance,
+            openning_time=opening_time,
+            closing_time=closing_time,
+        )
 
     @staticmethod
     def get_staff(
         name: str = "maria",
         surname: str = "sklodowskaya-curie",
         address: str = "nowhere",
-        age: int = 23
+        age: int = 23,
     ) -> Staff:
         return Staff(name=name, surname=surname, address=address, age=age)
+
+    @staticmethod
+    def get_order(
+        bartender: Bartenders,
+        total: int,
+        order_time: datetime.datetime = datetime.datetime(2020, 12, 1),
+    ) -> Orders:
+        return Orders(staff_id=bartender.staff_id, total=total, order_time=order_time)
+
+    @staticmethod
+    def get_drink(
+        price: int,
+        name: str = "margarita",
+        category: str = "alcoholic",
+        volume: int = 1,
+    ) -> Drinks:
+        return Drinks(price=price, name=name, category=category, volume=volume)
+
 
 def test_card_insert_bid_invalid(
     db_session: Callable[[], Session], cleanup_tables: Callable[list[Base], None]
@@ -159,6 +188,7 @@ def test_game_unsupervised_wrong(
             session.commit()
     cleanup_tables([GameTypes, GameSession])
 
+
 def test_game_supervised_wrong(
     db_session: Callable[[], Session], cleanup_tables: Callable[list[Base], None]
 ) -> None:
@@ -179,11 +209,55 @@ def test_game_supervised_wrong(
 
         session.begin()
         session_table = SessionTables(
-            session_id=game_session.session_id, table_id=table.table_id, staff_id=bartender.staff_id
+            session_id=game_session.session_id,
+            table_id=table.table_id,
+            staff_id=bartender.staff_id,
         )
         session.add(session_table)
         with pytest.raises(sqlalchemy.exc.ProgrammingError):
             session.commit()
     cleanup_tables([GameTypes, GameSession])
 
-    
+
+def test_card_order(
+    db_session: Callable[[], Session], cleanup_tables: Callable[list[Base], None]
+) -> None:
+    with db_session() as session:
+        session.begin()
+        card = Card(balance=120)
+        staff = DbObjectsFactory.get_staff()
+        drink1 = DbObjectsFactory.get_drink(10)
+        drink2 = DbObjectsFactory.get_drink(30)
+        session.add_all([card, staff, drink1, drink2])
+        session.commit()
+
+        session.begin()
+        bartender = Bartenders(staff_id=staff.staff_id, performance_rating=4)
+        session.add(bartender)
+        session.commit()
+
+        session.begin()
+        order = DbObjectsFactory.get_order(bartender, 0)
+        session.add(order)
+        session.commit()
+
+        session.begin()
+        split1 = SplitOrderByCard(
+            card_id=card.card_id,
+            order_id=order.order_id,
+            drink_id=drink1.drink_id,
+            quantity=2,
+        )
+        split2 = SplitOrderByCard(
+            card_id=card.card_id,
+            order_id=order.order_id,
+            drink_id=drink2.drink_id,
+            quantity=1,
+        )
+        session.add_all([split1, split2])
+        session.commit()
+
+        session.begin()
+        assert order.total == 50
+        assert card.balance == 70
+        session.commit()
