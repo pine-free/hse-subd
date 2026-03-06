@@ -8,18 +8,18 @@ ensure_dealer_correct = PGFunction(
     definition='''
     RETURNS TRIGGER AS $ensure_dealer$
     DECLARE
-        table_type_ID integer;
+        table_type_id integer;
         should_be_supervised integer;
         BEGIN
             IF (TG_OP = 'INSERT') THEN
-                SELECT type_ID INTO table_type_ID FROM Tables WHERE table_ID = NEW.table_ID;
-                SELECT isSupervised INTO should_be_supervised FROM Game_types WHERE type_ID = table_type_ID;
-                IF (should_be_supervised = 1 AND NEW.staff_ID IS NULL) THEN
+                SELECT type_id INTO table_type_id FROM Tables WHERE table_id = NEW.table_id;
+                SELECT is_supervised INTO should_be_supervised FROM game_types WHERE type_id = table_type_id;
+                IF (should_be_supervised = 1 AND NEW.staff_id IS NULL) THEN
                     RAISE EXCEPTION 'Game type % should be supervised, missing dealer for session %',
-                        table_type_ID, NEW.session_ID;
-                ELSIF (should_be_supervised = 0 AND NEW.staff_ID IS NOT NULL) THEN
+                        table_type_id, NEW.session_id;
+                ELSIF (should_be_supervised = 0 AND NEW.staff_id IS NOT NULL) THEN
                     RAISE EXCEPTION 'Game type % should not be supervised, found dealer % for session %',
-                        table_type_ID, NEW.staff_ID, NEW.session_ID;
+                        table_type_id, NEW.staff_id, NEW.session_id;
                 END IF;
                 
             END IF;
@@ -33,7 +33,7 @@ ensure_dealer_trigger = PGTrigger(
     schema="public",
     signature = "ensure_dealer_trigger",
     definition="""
-        AFTER INSERT ON public.session_tables DEFERRABLE INITIALLY DEFERRED
+        AFTER INSERT ON public.session_tables
         FOR EACH ROW EXECUTE FUNCTION ensure_dealer_correct();
     """,
     on_entity='public.session_tables',
@@ -56,9 +56,9 @@ update_card_bid = PGFunction(
                 RAISE EXCEPTION 'Cannot bet more money than the card has';
             END IF;
             IF (NEW.money_gain = 0) THEN
-                UPDATE card SET balance = balance - NEW.bid_amount WHERE card_ID = NEW.card_ID;
+                UPDATE card SET balance = balance - NEW.bid_amount WHERE card_id = NEW.card_id;
             ELSE
-                UPDATE card SET balance = balance + NEW.money_gain WHERE card_ID = NEW.card_ID;
+                UPDATE card SET balance = balance + NEW.money_gain WHERE card_id = NEW.card_id;
             END IF;
         END IF;
         RETURN NULL;
