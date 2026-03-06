@@ -5,7 +5,7 @@ CREATE TABLE alembic_version (
     CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
 );
 
--- Running upgrade  -> c7345392cff0
+-- Running upgrade  -> 118ace94455d
 
 CREATE TABLE card (
     card_id SERIAL NOT NULL, 
@@ -37,7 +37,7 @@ CREATE TABLE drinks (
 CREATE TABLE game_types (
     type_id SERIAL NOT NULL, 
     game_type VARCHAR(20) NOT NULL, 
-    "isSupervised" INTEGER NOT NULL, 
+    is_supervised INTEGER NOT NULL, 
     PRIMARY KEY (type_id)
 );
 
@@ -150,24 +150,24 @@ CREATE TABLE split_order_by_card (
     FOREIGN KEY(order_id) REFERENCES orders (order_id)
 );
 
-INSERT INTO alembic_version (version_num) VALUES ('c7345392cff0') RETURNING alembic_version.version_num;
+INSERT INTO alembic_version (version_num) VALUES ('118ace94455d') RETURNING alembic_version.version_num;
 
--- Running upgrade c7345392cff0 -> 5f29954982d9
+-- Running upgrade 118ace94455d -> 7af387664104
 
 CREATE FUNCTION "public"."ensure_dealer_correct"() RETURNS TRIGGER AS $ensure_dealer$
     DECLARE
-        table_type_ID integer;
+        table_type_id integer;
         should_be_supervised integer;
         BEGIN
             IF (TG_OP = 'INSERT') THEN
-                SELECT type_ID INTO table_type_ID FROM Tables WHERE table_ID = NEW.table_ID;
-                SELECT isSupervised INTO should_be_supervised FROM Game_types WHERE type_ID = table_type_ID;
-                IF (should_be_supervised = 1 AND NEW.staff_ID IS NULL) THEN
+                SELECT type_id INTO table_type_id FROM Tables WHERE table_id = NEW.table_id;
+                SELECT is_supervised INTO should_be_supervised FROM game_types WHERE type_id = table_type_id;
+                IF (should_be_supervised = 1 AND NEW.staff_id IS NULL) THEN
                     RAISE EXCEPTION 'Game type % should be supervised, missing dealer for session %',
-                        table_type_ID, NEW.session_ID;
-                ELSIF (should_be_supervised = 0 AND NEW.staff_ID IS NOT NULL) THEN
+                        table_type_id, NEW.session_id;
+                ELSIF (should_be_supervised = 0 AND NEW.staff_id IS NOT NULL) THEN
                     RAISE EXCEPTION 'Game type % should not be supervised, found dealer % for session %',
-                        table_type_ID, NEW.staff_ID, NEW.session_ID;
+                        table_type_id, NEW.staff_id, NEW.session_id;
                 END IF;
                 
             END IF;
@@ -185,21 +185,20 @@ CREATE FUNCTION "public"."update_card_bid"() RETURNS TRIGGER AS $update_card_bid
                 RAISE EXCEPTION 'Cannot bet more money than the card has';
             END IF;
             IF (NEW.money_gain = 0) THEN
-                UPDATE card SET balance = balance - NEW.bid_amount WHERE card_ID = NEW.card_ID;
+                UPDATE card SET balance = balance - NEW.bid_amount WHERE card_id = NEW.card_id;
             ELSE
-                UPDATE card SET balance = balance + NEW.money_gain WHERE card_ID = NEW.card_ID;
+                UPDATE card SET balance = balance + NEW.money_gain WHERE card_id = NEW.card_id;
             END IF;
         END IF;
         RETURN NULL;
     END;
     $update_card_bid$ LANGUAGE plpgsql;
 
-CREATE CONSTRAINT TRIGGER "ensure_dealer_trigger" AFTER INSERT ON public.session_tables DEFERRABLE INITIALLY DEFERRED
-        FOR EACH ROW EXECUTE FUNCTION ensure_dealer_correct();
+CREATE CONSTRAINT TRIGGER "ensure_dealer_trigger" AFTER INSERT ON public.session_tables FOR EACH ROW EXECUTE FUNCTION ensure_dealer_correct();
 
 CREATE TRIGGER "update_card_bid_trigger" AFTER INSERT ON public.card_bid_within_session FOR EACH ROW EXECUTE FUNCTION update_card_bid();
 
-UPDATE alembic_version SET version_num='5f29954982d9' WHERE alembic_version.version_num = 'c7345392cff0';
+UPDATE alembic_version SET version_num='7af387664104' WHERE alembic_version.version_num = '118ace94455d';
 
 COMMIT;
 

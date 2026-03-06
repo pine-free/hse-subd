@@ -1,8 +1,8 @@
 """initial
 
-Revision ID: c7345392cff0
+Revision ID: 118ace94455d
 Revises: 
-Create Date: 2026-03-06 18:54:01.034575
+Create Date: 2026-03-06 19:38:31.949555
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'c7345392cff0'
+revision: str = '118ace94455d'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -48,7 +48,7 @@ def upgrade() -> None:
     op.create_table('game_types',
     sa.Column('type_id', sa.Integer(), nullable=False),
     sa.Column('game_type', sa.String(length=20), nullable=False),
-    sa.Column('isSupervised', sa.Integer(), nullable=False),
+    sa.Column('is_supervised', sa.Integer(), nullable=False),
     sa.PrimaryKeyConstraint('type_id')
     )
     op.create_table('session',
