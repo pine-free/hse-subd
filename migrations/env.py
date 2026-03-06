@@ -1,12 +1,11 @@
 from alembic_utils.replaceable_entity import register_entities
 from logging.config import fileConfig
+import alembic.config
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
-from alembic_utils.pg_trigger import PGTrigger
-from alembic_utils.pg_function import PGFunction
 
 from src.models import Base
 from src.triggers import (
@@ -20,6 +19,7 @@ from src.triggers import (
 # access to the values within the .ini file in use.
 config = context.config
 
+xargs = context.get_x_argument(as_dictionary=True)
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:
@@ -37,12 +37,13 @@ target_metadata = Base.metadata
 # ... etc.
 
 
-register_entities([
-  ensure_dealer_correct,
-  ensure_dealer_trigger,
-  update_card_bid,
-  update_card_bid_trigger
-])
+if xargs.get('add-triggers') == '1':
+    register_entities([
+      ensure_dealer_correct,
+      ensure_dealer_trigger,
+      update_card_bid,
+      update_card_bid_trigger
+    ])
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
