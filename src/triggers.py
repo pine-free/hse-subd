@@ -65,7 +65,7 @@ update_card_bid = PGFunction(
     '''
 )
 
-ensure_dealer_trigger = PGTrigger(
+update_card_bid_trigger = PGTrigger(
     schema="public",
     signature = "update_card_bid_trigger",
     definition="""
