@@ -9,7 +9,12 @@ from alembic_utils.pg_trigger import PGTrigger
 from alembic_utils.pg_function import PGFunction
 
 from src.models import Base
-from src.triggers import ensure_dealer_correct, ensure_dealer_trigger
+from src.triggers import (
+    ensure_dealer_correct,
+    ensure_dealer_trigger,
+    update_card_bid,
+    update_card_bid_trigger
+)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -32,7 +37,12 @@ target_metadata = Base.metadata
 # ... etc.
 
 
-register_entities([ensure_dealer_correct, ensure_dealer_trigger])
+register_entities([
+  ensure_dealer_correct,
+  ensure_dealer_trigger,
+  update_card_bid,
+  update_card_bid_trigger
+])
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
