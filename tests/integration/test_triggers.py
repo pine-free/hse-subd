@@ -220,7 +220,7 @@ def test_game_supervised_wrong(
     cleanup_tables([GameTypes, GameSession])
 
 
-def test_card_order(
+def test_card_order_ok(
     db_session: Callable[[], Session], cleanup_tables: Callable[list[Base], None]
 ) -> None:
     with db_session() as session:
@@ -265,4 +265,60 @@ def test_card_order(
         assert card.balance == 70
         assert supply1.quantity == 0
         assert supply2.quantity == 2
+        session.commit()
+
+def test_card_order_err(
+    db_session: Callable[[], Session], cleanup_tables: Callable[list[Base], None]
+) -> None:
+    with db_session() as session:
+        session.begin()
+        card = Card(balance=60)
+        staff = DbObjectsFactory.get_staff()
+        drink_low_supply = DbObjectsFactory.get_drink(10)
+        drink_high_cost = DbObjectsFactory.get_drink(30)
+        session.add_all([card, staff, drink_low_supply, drink_high_cost])
+        session.commit()
+
+        session.begin()
+        bartender = Bartenders(staff_id=staff.staff_id, performance_rating=4)
+        supply_low = BarSupplies(drink_id=drink_low_supply.drink_id, quantity=2)
+        supply_high_cost = BarSupplies(drink_id=drink_high_cost.drink_id, quantity=3)
+        session.add_all([bartender, supply_low, supply_high_cost])
+        session.commit()
+
+        session.begin()
+        order = DbObjectsFactory.get_order(bartender, 0)
+        session.add(order)
+        session.commit()
+
+        session.begin()
+        split_low_supply = SplitOrderByCard(
+            card_id=card.card_id,
+            order_id=order.order_id,
+            drink_id=drink_low_supply.drink_id,
+            quantity=3,
+        )
+        session.add_all([split_low_supply])
+
+        with pytest.raises(sqlalchemy.exc.ProgrammingError):
+            session.commit()
+        session.rollback()
+
+        session.begin()
+        split_high_cost = SplitOrderByCard(
+            card_id=card.card_id,
+            order_id=order.order_id,
+            drink_id=drink_high_cost.drink_id,
+            quantity=3,
+        )
+        session.add(split_high_cost)
+
+        with pytest.raises(sqlalchemy.exc.ProgrammingError):
+            session.commit()
+        session.rollback()
+
+        session.begin()
+        assert card.balance == 60
+        assert supply_low.quantity == 2
+        assert supply_high_cost.quantity == 3
         session.commit()
