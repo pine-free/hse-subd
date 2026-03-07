@@ -81,6 +81,7 @@ update_card_order = PGFunction(
     DECLARE
         card_balance integer;
         order_total integer;
+        remaining_quantity integer;
     BEGIN
         IF (TG_OP = 'INSERT') THEN
             SELECT balance FROM card INTO card_balance WHERE card_id = NEW.card_id;
@@ -90,8 +91,15 @@ update_card_order = PGFunction(
                 RAISE EXCEPTION 'Cannot place an order with more total than the card has';
             END IF;
 
+            SELECT quantity FROM bar_supplies INTO remaining_quantity WHERE drink_id = NEW.drink_id;
+
+            IF (NEW.quantity > remaining_quantity) THEN
+                RAISE EXCEPTION 'Cannot place an order for more items than there are in supplies';
+            END IF;
+
             UPDATE orders SET total = total + order_total WHERE order_id = NEW.order_id;
             UPDATE card SET balance = balance - order_total WHERE card_id = NEW.card_id;
+            UPDATE bar_supplies SET quantity = quantity - NEW.quantity WHERE drink_id = NEW.drink_id;
         END IF;
         RETURN NULL;
     END;

@@ -5,7 +5,7 @@ CREATE TABLE alembic_version (
     CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
 );
 
--- Running upgrade  -> c68eaa978c68
+-- Running upgrade  -> f59172111b03
 
 CREATE TABLE card (
     card_id SERIAL NOT NULL, 
@@ -151,9 +151,9 @@ CREATE TABLE split_order_by_card (
     FOREIGN KEY(order_id) REFERENCES orders (order_id)
 );
 
-INSERT INTO alembic_version (version_num) VALUES ('c68eaa978c68') RETURNING alembic_version.version_num;
+INSERT INTO alembic_version (version_num) VALUES ('f59172111b03') RETURNING alembic_version.version_num;
 
--- Running upgrade c68eaa978c68 -> 49131ce749fc
+-- Running upgrade f59172111b03 -> 2cd28317d0d8
 
 CREATE FUNCTION "public"."ensure_dealer_correct"() RETURNS TRIGGER AS $ensure_dealer$
     DECLARE
@@ -195,6 +195,7 @@ CREATE FUNCTION "public"."update_card_order"() RETURNS TRIGGER AS $update_card_o
     DECLARE
         card_balance integer;
         order_total integer;
+        remaining_quantity integer;
     BEGIN
         IF (TG_OP = 'INSERT') THEN
             SELECT balance FROM card INTO card_balance WHERE card_id = NEW.card_id;
@@ -204,8 +205,15 @@ CREATE FUNCTION "public"."update_card_order"() RETURNS TRIGGER AS $update_card_o
                 RAISE EXCEPTION 'Cannot place an order with more total than the card has';
             END IF;
 
+            SELECT quantity FROM bar_supplies INTO remaining_quantity WHERE drink_id = NEW.drink_id;
+
+            IF (NEW.quantity > remaining_quantity) THEN
+                RAISE EXCEPTION 'Cannot place an order for more items than there are in supplies';
+            END IF;
+
             UPDATE orders SET total = total + order_total WHERE order_id = NEW.order_id;
             UPDATE card SET balance = balance - order_total WHERE card_id = NEW.card_id;
+            UPDATE bar_supplies SET quantity = quantity - NEW.quantity WHERE drink_id = NEW.drink_id;
         END IF;
         RETURN NULL;
     END;
@@ -217,7 +225,7 @@ CREATE TRIGGER "update_card_bid_trigger" AFTER INSERT ON public.card_bid_within_
 
 CREATE TRIGGER "update_card_order_trigger" AFTER INSERT ON public.split_order_by_card FOR EACH ROW EXECUTE FUNCTION update_card_order();
 
-UPDATE alembic_version SET version_num='49131ce749fc' WHERE alembic_version.version_num = 'c68eaa978c68';
+UPDATE alembic_version SET version_num='2cd28317d0d8' WHERE alembic_version.version_num = 'f59172111b03';
 
 COMMIT;
 

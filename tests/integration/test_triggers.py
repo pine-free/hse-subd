@@ -18,6 +18,7 @@ from src.models import (
     Orders,
     Drinks,
     SplitOrderByCard,
+    BarSupplies
 )
 from sqlalchemy.orm import Session, sessionmaker
 from typing import Generator, Callable
@@ -233,7 +234,9 @@ def test_card_order(
 
         session.begin()
         bartender = Bartenders(staff_id=staff.staff_id, performance_rating=4)
-        session.add(bartender)
+        supply1 = BarSupplies(drink_id=drink1.drink_id, quantity=2)
+        supply2 = BarSupplies(drink_id=drink2.drink_id, quantity=3)
+        session.add_all([bartender, supply1, supply2])
         session.commit()
 
         session.begin()
@@ -260,4 +263,6 @@ def test_card_order(
         session.begin()
         assert order.total == 50
         assert card.balance == 70
+        assert supply1.quantity == 0
+        assert supply2.quantity == 2
         session.commit()

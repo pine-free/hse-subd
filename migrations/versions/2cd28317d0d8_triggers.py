@@ -1,8 +1,8 @@
 """triggers
 
-Revision ID: 49131ce749fc
-Revises: c68eaa978c68
-Create Date: 2026-03-06 20:41:37.065600
+Revision ID: 2cd28317d0d8
+Revises: f59172111b03
+Create Date: 2026-03-07 13:06:13.484407
 
 """
 from typing import Sequence, Union
@@ -15,8 +15,8 @@ from alembic_utils.pg_trigger import PGTrigger
 from sqlalchemy import text as sql_text
 
 # revision identifiers, used by Alembic.
-revision: str = '49131ce749fc'
-down_revision: Union[str, Sequence[str], None] = 'c68eaa978c68'
+revision: str = '2cd28317d0d8'
+down_revision: Union[str, Sequence[str], None] = 'f59172111b03'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -41,7 +41,7 @@ def upgrade() -> None:
     public_update_card_order = PGFunction(
         schema="public",
         signature="update_card_order()",
-        definition="RETURNS TRIGGER AS $update_card_order$\n    DECLARE\n        card_balance integer;\n        order_total integer;\n    BEGIN\n        IF (TG_OP = 'INSERT') THEN\n            SELECT balance FROM card INTO card_balance WHERE card_id = NEW.card_id;\n            SELECT price * NEW.quantity FROM drinks INTO order_total WHERE drink_id = NEW.drink_id;\n\n            IF (order_total > card_balance) THEN\n                RAISE EXCEPTION 'Cannot place an order with more total than the card has';\n            END IF;\n\n            UPDATE orders SET total = total + order_total WHERE order_id = NEW.order_id;\n            UPDATE card SET balance = balance - order_total WHERE card_id = NEW.card_id;\n        END IF;\n        RETURN NULL;\n    END;\n    $update_card_order$ LANGUAGE plpgsql"
+        definition="RETURNS TRIGGER AS $update_card_order$\n    DECLARE\n        card_balance integer;\n        order_total integer;\n        remaining_quantity integer;\n    BEGIN\n        IF (TG_OP = 'INSERT') THEN\n            SELECT balance FROM card INTO card_balance WHERE card_id = NEW.card_id;\n            SELECT price * NEW.quantity FROM drinks INTO order_total WHERE drink_id = NEW.drink_id;\n\n            IF (order_total > card_balance) THEN\n                RAISE EXCEPTION 'Cannot place an order with more total than the card has';\n            END IF;\n\n            SELECT quantity FROM bar_supplies INTO remaining_quantity WHERE drink_id = NEW.drink_id;\n\n            IF (NEW.quantity > remaining_quantity) THEN\n                RAISE EXCEPTION 'Cannot place an order for more items than there are in supplies';\n            END IF;\n\n            UPDATE orders SET total = total + order_total WHERE order_id = NEW.order_id;\n            UPDATE card SET balance = balance - order_total WHERE card_id = NEW.card_id;\n            UPDATE bar_supplies SET quantity = quantity - NEW.quantity WHERE drink_id = NEW.drink_id;\n        END IF;\n        RETURN NULL;\n    END;\n    $update_card_order$ LANGUAGE plpgsql"
     )
     op.create_entity(public_update_card_order)
 
@@ -108,7 +108,7 @@ def downgrade() -> None:
     public_update_card_order = PGFunction(
         schema="public",
         signature="update_card_order()",
-        definition="RETURNS TRIGGER AS $update_card_order$\n    DECLARE\n        card_balance integer;\n        order_total integer;\n    BEGIN\n        IF (TG_OP = 'INSERT') THEN\n            SELECT balance FROM card INTO card_balance WHERE card_id = NEW.card_id;\n            SELECT price * NEW.quantity FROM drinks INTO order_total WHERE drink_id = NEW.drink_id;\n\n            IF (order_total > card_balance) THEN\n                RAISE EXCEPTION 'Cannot place an order with more total than the card has';\n            END IF;\n\n            UPDATE orders SET total = total + order_total WHERE order_id = NEW.order_id;\n            UPDATE card SET balance = balance - order_total WHERE card_id = NEW.card_id;\n        END IF;\n        RETURN NULL;\n    END;\n    $update_card_order$ LANGUAGE plpgsql"
+        definition="RETURNS TRIGGER AS $update_card_order$\n    DECLARE\n        card_balance integer;\n        order_total integer;\n        remaining_quantity integer;\n    BEGIN\n        IF (TG_OP = 'INSERT') THEN\n            SELECT balance FROM card INTO card_balance WHERE card_id = NEW.card_id;\n            SELECT price * NEW.quantity FROM drinks INTO order_total WHERE drink_id = NEW.drink_id;\n\n            IF (order_total > card_balance) THEN\n                RAISE EXCEPTION 'Cannot place an order with more total than the card has';\n            END IF;\n\n            SELECT quantity FROM bar_supplies INTO remaining_quantity WHERE drink_id = NEW.drink_id;\n\n            IF (NEW.quantity > remaining_quantity) THEN\n                RAISE EXCEPTION 'Cannot place an order for more items than there are in supplies';\n            END IF;\n\n            UPDATE orders SET total = total + order_total WHERE order_id = NEW.order_id;\n            UPDATE card SET balance = balance - order_total WHERE card_id = NEW.card_id;\n            UPDATE bar_supplies SET quantity = quantity - NEW.quantity WHERE drink_id = NEW.drink_id;\n        END IF;\n        RETURN NULL;\n    END;\n    $update_card_order$ LANGUAGE plpgsql"
     )
     op.drop_entity(public_update_card_order)
 
