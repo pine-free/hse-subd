@@ -3,9 +3,9 @@ from alembic_utils.pg_function import PGFunction
 
 # == Dealer check ==
 ensure_dealer_correct = PGFunction(
-    schema='public',
-    signature='ensure_dealer_correct()',
-    definition='''
+    schema="public",
+    signature="ensure_dealer_correct()",
+    definition="""
     RETURNS TRIGGER AS $ensure_dealer$
     DECLARE
         table_type_id integer;
@@ -26,26 +26,26 @@ ensure_dealer_correct = PGFunction(
             RETURN NULL;
         END;
     $ensure_dealer$ LANGUAGE plpgsql;
-    '''
+    """,
 )
 
 ensure_dealer_trigger = PGTrigger(
     schema="public",
-    signature = "ensure_dealer_trigger",
+    signature="ensure_dealer_trigger",
     definition="""
         AFTER INSERT ON public.session_tables
         FOR EACH ROW EXECUTE FUNCTION ensure_dealer_correct();
     """,
-    on_entity='public.session_tables',
-    is_constraint=True
+    on_entity="public.session_tables",
+    is_constraint=True,
 )
 
 # == Update cards on bid ==
 
 update_card_bid = PGFunction(
-    schema='public',
-    signature='update_card_bid()',
-    definition='''
+    schema="public",
+    signature="update_card_bid()",
+    definition="""
     RETURNS TRIGGER AS $update_card_bid$
     DECLARE
         card_balance integer;
@@ -60,23 +60,23 @@ update_card_bid = PGFunction(
         RETURN NULL;
     END;
     $update_card_bid$ LANGUAGE plpgsql
-    '''
+    """,
 )
 
 update_card_bid_trigger = PGTrigger(
     schema="public",
-    signature = "update_card_bid_trigger",
+    signature="update_card_bid_trigger",
     definition="""
         AFTER INSERT ON public.card_bid_within_session
         FOR EACH ROW EXECUTE FUNCTION update_card_bid();
     """,
-    on_entity='public.card_bid_within_session',
+    on_entity="public.card_bid_within_session",
 )
 
 update_card_order = PGFunction(
-    schema='public',
-    signature='update_card_order()',
-    definition='''
+    schema="public",
+    signature="update_card_order()",
+    definition="""
     RETURNS TRIGGER AS $update_card_order$
     DECLARE
         card_balance integer;
@@ -104,15 +104,15 @@ update_card_order = PGFunction(
         RETURN NULL;
     END;
     $update_card_order$ LANGUAGE plpgsql
-    '''
+    """,
 )
 
 update_card_order_trigger = PGTrigger(
     schema="public",
-    signature = "update_card_order_trigger",
+    signature="update_card_order_trigger",
     definition="""
         AFTER INSERT ON public.split_order_by_card
         FOR EACH ROW EXECUTE FUNCTION update_card_order();
     """,
-    on_entity='public.split_order_by_card',
+    on_entity="public.split_order_by_card",
 )

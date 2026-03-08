@@ -2,7 +2,7 @@ import sqlalchemy
 import sqlalchemy.exc
 import pytest
 import datetime
-from contextlib import contextmanager, closing
+from contextlib import contextmanager
 
 from src.models import (
     Base,
@@ -18,7 +18,7 @@ from src.models import (
     Orders,
     Drinks,
     SplitOrderByCard,
-    BarSupplies
+    BarSupplies,
 )
 from sqlalchemy.orm import Session, sessionmaker
 from typing import Generator, Callable
@@ -266,6 +266,7 @@ def test_card_order_ok(
         assert supply1.quantity == 0
         assert supply2.quantity == 2
         session.commit()
+
 
 def test_card_order_err(
     db_session: Callable[[], Session], cleanup_tables: Callable[list[Base], None]
