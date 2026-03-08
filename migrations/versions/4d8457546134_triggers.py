@@ -1,8 +1,8 @@
 """triggers
 
-Revision ID: b76eb0277a84
-Revises: 1052e10b7ec6
-Create Date: 2026-03-08 20:38:03.271339
+Revision ID: 4d8457546134
+Revises: ce6c88068eeb
+Create Date: 2026-03-08 21:49:54.970385
 
 """
 from typing import Sequence, Union
@@ -15,8 +15,8 @@ from alembic_utils.pg_trigger import PGTrigger
 from sqlalchemy import text as sql_text
 
 # revision identifiers, used by Alembic.
-revision: str = 'b76eb0277a84'
-down_revision: Union[str, Sequence[str], None] = '1052e10b7ec6'
+revision: str = '4d8457546134'
+down_revision: Union[str, Sequence[str], None] = 'ce6c88068eeb'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -29,32 +29,44 @@ def upgrade() -> None:
     op.execute("""CREATE ROLE "card_reader" WITH NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT NOLOGIN NOREPLICATION NOBYPASSRLS PASSWORD 'card_reader';""")
     op.execute("""CREATE ROLE "card_dispenser" WITH NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT NOLOGIN NOREPLICATION NOBYPASSRLS PASSWORD 'card_dispenser';""")
     op.execute("""CREATE ROLE "order_terminal" WITH NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT NOLOGIN NOREPLICATION NOBYPASSRLS PASSWORD 'order_terminal';""")
+    op.execute("""CREATE ROLE "bid_terminal" WITH NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT NOLOGIN NOREPLICATION NOBYPASSRLS PASSWORD 'bid_terminal';""")
     op.execute("""CREATE ROLE "bartenders" WITH NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN NOREPLICATION NOBYPASSRLS PASSWORD 'bartenders' IN ROLE "staff";""")
     op.execute("""CREATE ROLE "security" WITH NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN NOREPLICATION NOBYPASSRLS PASSWORD 'security' IN ROLE "staff";""")
     op.execute("""CREATE ROLE "dealers" WITH NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN NOREPLICATION NOBYPASSRLS PASSWORD 'dealers' IN ROLE "staff";""")
+    op.execute(sa.text("""GRANT USAGE ON SEQUENCE "card_bid_within_session_bid_id_seq" TO "bid_terminal";"""))
+    op.execute(sa.text("""GRANT USAGE ON SEQUENCE "card_card_id_seq" TO "card_dispenser";"""))
+    op.execute(sa.text("""GRANT USAGE ON SEQUENCE "cards_to_clients_dispenser_dispenser_id_seq" TO "card_dispenser";"""))
+    op.execute(sa.text("""GRANT USAGE ON SEQUENCE "orders_order_id_seq" TO "order_terminal";"""))
+    op.execute(sa.text("""GRANT USAGE ON SEQUENCE "split_order_by_card_split_order_id_seq" TO "order_terminal";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "bar_supplies" TO "bartenders";"""))
-    op.execute(sa.text("""GRANT UPDATE ON TABLE "bar_supplies" TO "order_terminal";"""))
+    op.execute(sa.text("""GRANT UPDATE, SELECT ON TABLE "bar_supplies" TO "order_terminal";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "bartenders" TO "bartenders";"""))
-    op.execute(sa.text("""GRANT INSERT ON TABLE "card" TO "card_dispenser";"""))
+    op.execute(sa.text("""GRANT SELECT ON TABLE "bartenders" TO "order_terminal";"""))
+    op.execute(sa.text("""GRANT SELECT, UPDATE ON TABLE "card" TO "bid_terminal";"""))
+    op.execute(sa.text("""GRANT INSERT, SELECT ON TABLE "card" TO "card_dispenser";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "card" TO "card_reader";"""))
+    op.execute(sa.text("""GRANT SELECT, UPDATE ON TABLE "card" TO "order_terminal";"""))
+    op.execute(sa.text("""GRANT SELECT, INSERT ON TABLE "card_bid_within_session" TO "bid_terminal";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "card_bid_within_session" TO "dealers";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "card_bid_within_session" TO "players";"""))
-    op.execute(sa.text("""GRANT INSERT ON TABLE "cards_to_clients_dispenser" TO "card_dispenser";"""))
+    op.execute(sa.text("""GRANT SELECT, INSERT ON TABLE "cards_to_clients_dispenser" TO "card_dispenser";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "cards_to_clients_dispenser" TO "security";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "clients" TO "security";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "dealers" TO "dealers";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "drinks" TO "bartenders";"""))
+    op.execute(sa.text("""GRANT SELECT ON TABLE "drinks" TO "order_terminal";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "game_types" TO "dealers";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "game_types" TO "players";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "orders" TO "bartenders";"""))
-    op.execute(sa.text("""GRANT INSERT ON TABLE "orders" TO "order_terminal";"""))
+    op.execute(sa.text("""GRANT UPDATE, SELECT, INSERT ON TABLE "orders" TO "order_terminal";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "security" TO "security";"""))
+    op.execute(sa.text("""GRANT SELECT ON TABLE "session" TO "bid_terminal";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "session" TO "dealers";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "session" TO "players";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "session_tables" TO "dealers";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "session_tables" TO "players";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "split_order_by_card" TO "bartenders";"""))
-    op.execute(sa.text("""GRANT INSERT ON TABLE "split_order_by_card" TO "order_terminal";"""))
+    op.execute(sa.text("""GRANT SELECT, INSERT ON TABLE "split_order_by_card" TO "order_terminal";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "staff" TO "staff";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "tables" TO "dealers";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "tables" TO "players";"""))
@@ -163,32 +175,44 @@ def downgrade() -> None:
     op.execute(sa.text("""REVOKE SELECT ON TABLE "tables" FROM "players";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "tables" FROM "dealers";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "staff" FROM "staff";"""))
-    op.execute(sa.text("""REVOKE INSERT ON TABLE "split_order_by_card" FROM "order_terminal";"""))
+    op.execute(sa.text("""REVOKE SELECT, INSERT ON TABLE "split_order_by_card" FROM "order_terminal";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "split_order_by_card" FROM "bartenders";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "session_tables" FROM "players";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "session_tables" FROM "dealers";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "session" FROM "players";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "session" FROM "dealers";"""))
+    op.execute(sa.text("""REVOKE SELECT ON TABLE "session" FROM "bid_terminal";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "security" FROM "security";"""))
-    op.execute(sa.text("""REVOKE INSERT ON TABLE "orders" FROM "order_terminal";"""))
+    op.execute(sa.text("""REVOKE UPDATE, SELECT, INSERT ON TABLE "orders" FROM "order_terminal";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "orders" FROM "bartenders";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "game_types" FROM "players";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "game_types" FROM "dealers";"""))
+    op.execute(sa.text("""REVOKE SELECT ON TABLE "drinks" FROM "order_terminal";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "drinks" FROM "bartenders";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "dealers" FROM "dealers";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "clients" FROM "security";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "cards_to_clients_dispenser" FROM "security";"""))
-    op.execute(sa.text("""REVOKE INSERT ON TABLE "cards_to_clients_dispenser" FROM "card_dispenser";"""))
+    op.execute(sa.text("""REVOKE SELECT, INSERT ON TABLE "cards_to_clients_dispenser" FROM "card_dispenser";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "card_bid_within_session" FROM "players";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "card_bid_within_session" FROM "dealers";"""))
+    op.execute(sa.text("""REVOKE SELECT, INSERT ON TABLE "card_bid_within_session" FROM "bid_terminal";"""))
+    op.execute(sa.text("""REVOKE SELECT, UPDATE ON TABLE "card" FROM "order_terminal";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "card" FROM "card_reader";"""))
-    op.execute(sa.text("""REVOKE INSERT ON TABLE "card" FROM "card_dispenser";"""))
+    op.execute(sa.text("""REVOKE INSERT, SELECT ON TABLE "card" FROM "card_dispenser";"""))
+    op.execute(sa.text("""REVOKE SELECT, UPDATE ON TABLE "card" FROM "bid_terminal";"""))
+    op.execute(sa.text("""REVOKE SELECT ON TABLE "bartenders" FROM "order_terminal";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "bartenders" FROM "bartenders";"""))
-    op.execute(sa.text("""REVOKE UPDATE ON TABLE "bar_supplies" FROM "order_terminal";"""))
+    op.execute(sa.text("""REVOKE UPDATE, SELECT ON TABLE "bar_supplies" FROM "order_terminal";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "bar_supplies" FROM "bartenders";"""))
+    op.execute(sa.text("""REVOKE USAGE ON SEQUENCE "split_order_by_card_split_order_id_seq" FROM "order_terminal";"""))
+    op.execute(sa.text("""REVOKE USAGE ON SEQUENCE "orders_order_id_seq" FROM "order_terminal";"""))
+    op.execute(sa.text("""REVOKE USAGE ON SEQUENCE "cards_to_clients_dispenser_dispenser_id_seq" FROM "card_dispenser";"""))
+    op.execute(sa.text("""REVOKE USAGE ON SEQUENCE "card_card_id_seq" FROM "card_dispenser";"""))
+    op.execute(sa.text("""REVOKE USAGE ON SEQUENCE "card_bid_within_session_bid_id_seq" FROM "bid_terminal";"""))
     op.execute("""DROP ROLE "dealers";""")
     op.execute("""DROP ROLE "security";""")
     op.execute("""DROP ROLE "bartenders";""")
+    op.execute("""DROP ROLE "bid_terminal";""")
     op.execute("""DROP ROLE "order_terminal";""")
     op.execute("""DROP ROLE "card_dispenser";""")
     op.execute("""DROP ROLE "card_reader";""")

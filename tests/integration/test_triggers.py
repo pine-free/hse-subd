@@ -31,11 +31,16 @@ def db_engine(postgres_url: URL) -> Engine:
     return e
 
 
+def switch_role(session: Session, role: str) -> None:
+    session.execute(text(f"SET ROLE {role};"))
+
+
 @pytest.fixture()
 def cleanup_tables(db_session: Callable[[], Session]) -> Callable[[list[Base]], None]:
     def _cleanup(types: list[Base]) -> None:
         with db_session() as session:
             session.begin()
+            switch_role(session, "postgres")
             for t in types:
                 session.execute(
                     text(f"TRUNCATE TABLE {t.__tablename__} RESTART IDENTITY CASCADE;")
@@ -62,7 +67,6 @@ def db_session(db_engine: Engine) -> Callable[[], Generator[Session]]:
             session.close()
 
     return _get_session
-
 
 class DbObjectsFactory:
     def __init__(self) -> None:
@@ -127,6 +131,7 @@ def test_card_insert_bid_invalid(
         session.commit()
 
         session.begin()
+        switch_role(session, Base._ROLE_BID_TERMINAL.name)
         bid = CardBidWithnSession(
             session_id=game_session.session_id,
             card_id=card.card_id,
@@ -150,6 +155,7 @@ def test_card_insert_bid_win(
         session.commit()
 
         session.begin()
+        switch_role(session, Base._ROLE_BID_TERMINAL.name)
         bid = CardBidWithnSession(
             session_id=game_session.session_id,
             card_id=card.card_id,
@@ -240,11 +246,13 @@ def test_card_order_ok(
         session.commit()
 
         session.begin()
+        switch_role(session, Base._ROLE_ORDER_TERMINAL.name)
         order = DbObjectsFactory.get_order(bartender, 0)
         session.add(order)
         session.commit()
 
         session.begin()
+        switch_role(session, Base._ROLE_ORDER_TERMINAL.name)
         split1 = SplitOrderByCard(
             card_id=card.card_id,
             order_id=order.order_id,
@@ -288,11 +296,13 @@ def test_card_order_err(
         session.commit()
 
         session.begin()
+        switch_role(session, Base._ROLE_ORDER_TERMINAL.name)
         order = DbObjectsFactory.get_order(bartender, 0)
         session.add(order)
         session.commit()
 
         session.begin()
+        switch_role(session, Base._ROLE_ORDER_TERMINAL.name)
         split_low_supply = SplitOrderByCard(
             card_id=card.card_id,
             order_id=order.order_id,

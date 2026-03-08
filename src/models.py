@@ -36,6 +36,7 @@ class Base(DeclarativeBase):
     _ROLE_ORDER_TERMINAL: ClassVar[Role] = Role(
         "order_terminal", password="order_terminal"
     )
+    _ROLE_BID_TERMINAL: ClassVar[Role] = Role("bid_terminal", password="bid_terminal")
 
     roles = Roles(ignore_unspecified=True).are(
         # Read Roles
@@ -44,14 +45,12 @@ class Base(DeclarativeBase):
         _ROLE_BARTENDER,
         _ROLE_SECURITY,
         _ROLE_DEALERS,
-
         _ROLE_PLAYERS,
-
         _ROLE_CARD_READER,
-
         # Write Roles
         _ROLE_CARD_DISPENSER,
         _ROLE_ORDER_TERMINAL,
+        _ROLE_BID_TERMINAL,
     )
 
     grants = Grants(ignore_unspecified=True).are(
@@ -78,13 +77,40 @@ class Base(DeclarativeBase):
             "dealers",
         ),
         Grant.new("select", to=_ROLE_CARD_READER).on_tables("card"),
+        Grant.new("select", to=_ROLE_CARD_DISPENSER).on_tables(
+            "cards_to_clients_dispenser", "card"
+        ),
         Grant.new("insert", to=_ROLE_CARD_DISPENSER).on_tables(
             "cards_to_clients_dispenser", "card"
+        ),
+        Grant.new("usage", to=_ROLE_CARD_DISPENSER).on_sequences(
+            "card_card_id_seq", "cards_to_clients_dispenser_dispenser_id_seq"
+        ),
+        # Permissions according go the order update trigger
+        Grant.new("select", to=_ROLE_ORDER_TERMINAL).on_tables(
+            "card",
+            "drinks",
+            "bar_supplies",
+            "bartenders",
+            "split_order_by_card",
+            "orders",
         ),
         Grant.new("insert", to=_ROLE_ORDER_TERMINAL).on_tables(
             "split_order_by_card", "orders"
         ),
-        Grant.new("update", to=_ROLE_ORDER_TERMINAL).on_tables("bar_supplies"),
+        Grant.new("usage", to=_ROLE_ORDER_TERMINAL).on_sequences(
+            "split_order_by_card_split_order_id_seq", "orders_order_id_seq"
+        ),
+        Grant.new("update", to=_ROLE_ORDER_TERMINAL).on_tables(
+            "bar_supplies", "orders", "card"
+        ),
+        # Permissions according to bid update trigger
+        Grant.new("select", to=_ROLE_BID_TERMINAL).on_tables("card", "session", "card_bid_within_session"),
+        Grant.new("insert", to=_ROLE_BID_TERMINAL).on_tables("card_bid_within_session"),
+        Grant.new("usage", to=_ROLE_BID_TERMINAL).on_sequences(
+            "card_bid_within_session_bid_id_seq"
+        ),
+        Grant.new("update", to=_ROLE_BID_TERMINAL).on_tables("card"),
     )
 
 

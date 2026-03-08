@@ -5,7 +5,7 @@ CREATE TABLE alembic_version (
     CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
 );
 
--- Running upgrade  -> 1052e10b7ec6
+-- Running upgrade  -> ce6c88068eeb
 
 CREATE TABLE card (
     card_id SERIAL NOT NULL, 
@@ -151,9 +151,9 @@ CREATE TABLE split_order_by_card (
     FOREIGN KEY(order_id) REFERENCES orders (order_id)
 );
 
-INSERT INTO alembic_version (version_num) VALUES ('1052e10b7ec6') RETURNING alembic_version.version_num;
+INSERT INTO alembic_version (version_num) VALUES ('ce6c88068eeb') RETURNING alembic_version.version_num;
 
--- Running upgrade 1052e10b7ec6 -> b76eb0277a84
+-- Running upgrade ce6c88068eeb -> 4d8457546134
 
 CREATE ROLE "staff" WITH NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN NOREPLICATION NOBYPASSRLS PASSWORD 'staff';;
 
@@ -165,27 +165,47 @@ CREATE ROLE "card_dispenser" WITH NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT NO
 
 CREATE ROLE "order_terminal" WITH NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT NOLOGIN NOREPLICATION NOBYPASSRLS PASSWORD 'order_terminal';;
 
+CREATE ROLE "bid_terminal" WITH NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT NOLOGIN NOREPLICATION NOBYPASSRLS PASSWORD 'bid_terminal';;
+
 CREATE ROLE "bartenders" WITH NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN NOREPLICATION NOBYPASSRLS PASSWORD 'bartenders' IN ROLE "staff";;
 
 CREATE ROLE "security" WITH NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN NOREPLICATION NOBYPASSRLS PASSWORD 'security' IN ROLE "staff";;
 
 CREATE ROLE "dealers" WITH NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN NOREPLICATION NOBYPASSRLS PASSWORD 'dealers' IN ROLE "staff";;
 
+GRANT USAGE ON SEQUENCE "card_bid_within_session_bid_id_seq" TO "bid_terminal";;
+
+GRANT USAGE ON SEQUENCE "card_card_id_seq" TO "card_dispenser";;
+
+GRANT USAGE ON SEQUENCE "cards_to_clients_dispenser_dispenser_id_seq" TO "card_dispenser";;
+
+GRANT USAGE ON SEQUENCE "orders_order_id_seq" TO "order_terminal";;
+
+GRANT USAGE ON SEQUENCE "split_order_by_card_split_order_id_seq" TO "order_terminal";;
+
 GRANT SELECT ON TABLE "bar_supplies" TO "bartenders";;
 
-GRANT UPDATE ON TABLE "bar_supplies" TO "order_terminal";;
+GRANT UPDATE, SELECT ON TABLE "bar_supplies" TO "order_terminal";;
 
 GRANT SELECT ON TABLE "bartenders" TO "bartenders";;
 
-GRANT INSERT ON TABLE "card" TO "card_dispenser";;
+GRANT SELECT ON TABLE "bartenders" TO "order_terminal";;
+
+GRANT SELECT, UPDATE ON TABLE "card" TO "bid_terminal";;
+
+GRANT INSERT, SELECT ON TABLE "card" TO "card_dispenser";;
 
 GRANT SELECT ON TABLE "card" TO "card_reader";;
+
+GRANT SELECT, UPDATE ON TABLE "card" TO "order_terminal";;
+
+GRANT SELECT, INSERT ON TABLE "card_bid_within_session" TO "bid_terminal";;
 
 GRANT SELECT ON TABLE "card_bid_within_session" TO "dealers";;
 
 GRANT SELECT ON TABLE "card_bid_within_session" TO "players";;
 
-GRANT INSERT ON TABLE "cards_to_clients_dispenser" TO "card_dispenser";;
+GRANT SELECT, INSERT ON TABLE "cards_to_clients_dispenser" TO "card_dispenser";;
 
 GRANT SELECT ON TABLE "cards_to_clients_dispenser" TO "security";;
 
@@ -195,15 +215,19 @@ GRANT SELECT ON TABLE "dealers" TO "dealers";;
 
 GRANT SELECT ON TABLE "drinks" TO "bartenders";;
 
+GRANT SELECT ON TABLE "drinks" TO "order_terminal";;
+
 GRANT SELECT ON TABLE "game_types" TO "dealers";;
 
 GRANT SELECT ON TABLE "game_types" TO "players";;
 
 GRANT SELECT ON TABLE "orders" TO "bartenders";;
 
-GRANT INSERT ON TABLE "orders" TO "order_terminal";;
+GRANT UPDATE, SELECT, INSERT ON TABLE "orders" TO "order_terminal";;
 
 GRANT SELECT ON TABLE "security" TO "security";;
+
+GRANT SELECT ON TABLE "session" TO "bid_terminal";;
 
 GRANT SELECT ON TABLE "session" TO "dealers";;
 
@@ -215,7 +239,7 @@ GRANT SELECT ON TABLE "session_tables" TO "players";;
 
 GRANT SELECT ON TABLE "split_order_by_card" TO "bartenders";;
 
-GRANT INSERT ON TABLE "split_order_by_card" TO "order_terminal";;
+GRANT SELECT, INSERT ON TABLE "split_order_by_card" TO "order_terminal";;
 
 GRANT SELECT ON TABLE "staff" TO "staff";;
 
@@ -293,7 +317,7 @@ CREATE TRIGGER "update_card_bid_trigger" AFTER INSERT ON public.card_bid_within_
 
 CREATE TRIGGER "update_card_order_trigger" AFTER INSERT ON public.split_order_by_card FOR EACH ROW EXECUTE FUNCTION update_card_order();
 
-UPDATE alembic_version SET version_num='b76eb0277a84' WHERE alembic_version.version_num = '1052e10b7ec6';
+UPDATE alembic_version SET version_num='4d8457546134' WHERE alembic_version.version_num = 'ce6c88068eeb';
 
 COMMIT;
 
