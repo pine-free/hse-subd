@@ -13,17 +13,24 @@ from sqlalchemy_declarative_extensions.dialects.postgresql import (
 
 @declarative_database
 class Base(DeclarativeBase):
+    _ROLE_STAFF: ClassVar[Role] = Role("staff", login=True, password="staff")
     _ROLE_BARTENDER: ClassVar[Role] = Role(
-        "bartenders", login=True, password="bartenders"
+        "bartenders", login=True, password="bartenders", use_role=_ROLE_STAFF
+    )
+    _ROLE_SECURITY: ClassVar[Role] = Role(
+        "security", login=True, password="security", use_role=_ROLE_STAFF
+    )
+    _ROLE_DEALERS: ClassVar[Role] = Role(
+        "dealers", login=True, password="dealers", use_role=_ROLE_STAFF
     )
     _ROLE_PLAYERS: ClassVar[Role] = Role("players", login=True, password="players")
-    _ROLE_SECURITY: ClassVar[Role] = Role("security", login=True, password="security")
 
     roles = Roles(ignore_unspecified=True).are(
         _ROLE_BARTENDER, _ROLE_PLAYERS, _ROLE_SECURITY
     )
 
     grants = Grants(ignore_unspecified=True).are(
+        Grant.new("select", to=_ROLE_STAFF).on_tables("staff"),
         Grant.new("select", to=_ROLE_SECURITY).on_tables(
             "clients", "cards_to_clients_dispenser", "security"
         ),
