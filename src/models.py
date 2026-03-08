@@ -13,20 +13,45 @@ from sqlalchemy_declarative_extensions.dialects.postgresql import (
 
 @declarative_database
 class Base(DeclarativeBase):
+    # Read Roles
     _ROLE_STAFF: ClassVar[Role] = Role("staff", login=True, password="staff")
     _ROLE_BARTENDER: ClassVar[Role] = Role(
-        "bartenders", login=True, password="bartenders", use_role=_ROLE_STAFF
+        "bartenders", login=True, password="bartenders", in_roles=[_ROLE_STAFF]
     )
     _ROLE_SECURITY: ClassVar[Role] = Role(
-        "security", login=True, password="security", use_role=_ROLE_STAFF
+        "security", login=True, password="security", in_roles=[_ROLE_STAFF]
     )
     _ROLE_DEALERS: ClassVar[Role] = Role(
-        "dealers", login=True, password="dealers", use_role=_ROLE_STAFF
+        "dealers", login=True, password="dealers", in_roles=[_ROLE_STAFF]
     )
+
     _ROLE_PLAYERS: ClassVar[Role] = Role("players", login=True, password="players")
 
+    _ROLE_CARD_READER: ClassVar[Role] = Role("card_reader", password="card_reader")
+
+    # Write Roles
+    _ROLE_CARD_DISPENSER: ClassVar[Role] = Role(
+        "card_dispenser", password="card_dispenser"
+    )
+    _ROLE_ORDER_TERMINAL: ClassVar[Role] = Role(
+        "order_terminal", password="order_terminal"
+    )
+
     roles = Roles(ignore_unspecified=True).are(
-        _ROLE_BARTENDER, _ROLE_PLAYERS, _ROLE_SECURITY
+        # Read Roles
+        # -- Staff
+        _ROLE_STAFF,
+        _ROLE_BARTENDER,
+        _ROLE_SECURITY,
+        _ROLE_DEALERS,
+
+        _ROLE_PLAYERS,
+
+        _ROLE_CARD_READER,
+
+        # Write Roles
+        _ROLE_CARD_DISPENSER,
+        _ROLE_ORDER_TERMINAL,
     )
 
     grants = Grants(ignore_unspecified=True).are(
@@ -38,13 +63,28 @@ class Base(DeclarativeBase):
             "bar_supplies", "drinks", "split_order_by_card", "orders", "bartenders"
         ),
         Grant.new("select", to=_ROLE_PLAYERS).on_tables(
-            "card",
             "card_bid_within_session",
             "session",
             "session_tables",
             "tables",
             "game_types",
         ),
+        Grant.new("select", to=_ROLE_DEALERS).on_tables(
+            "card_bid_within_session",
+            "session",
+            "session_tables",
+            "tables",
+            "game_types",
+            "dealers",
+        ),
+        Grant.new("select", to=_ROLE_CARD_READER).on_tables("card"),
+        Grant.new("insert", to=_ROLE_CARD_DISPENSER).on_tables(
+            "cards_to_clients_dispenser", "card"
+        ),
+        Grant.new("insert", to=_ROLE_ORDER_TERMINAL).on_tables(
+            "split_order_by_card", "orders"
+        ),
+        Grant.new("update", to=_ROLE_ORDER_TERMINAL).on_tables("bar_supplies"),
     )
 
 
