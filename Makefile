@@ -8,6 +8,14 @@ container-up:
 container-down:
 	docker compose -f ./local-ctl/compose.yaml down
 	sleep 1
+
+ui-up:
+	docker compose -f ./local-ctl/ui.compose.yaml up -d
+	sleep 1
+
+ui-down:
+	docker compose -f ./local-ctl/ui.compose.yaml down
+	sleep 1
 	
 migrations: container-up
 	alembic -x add-triggers=0 revision --autogenerate -m "initial"

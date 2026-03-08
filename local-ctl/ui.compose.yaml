@@ -1,0 +1,21 @@
+services:
+  pgadmin:
+    image: r-docker.repository.avp.ru/dpage/pgadmin4
+    ports:
+      - target: 80
+        published: 5050
+        protocol: tcp
+        mode: host
+    entrypoint: sh -c 'echo *:5432:*:postgres:postgres > /var/lib/pgadmin/pgpass && chmod 0600 /var/lib/pgadmin/pgpass && /entrypoint.sh'
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_DISABLE_POSTFIX: 1
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+    volumes:
+      - ./lib/pgadmin/servers.json:/pgadmin4/servers.json
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+
