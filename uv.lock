@@ -137,6 +137,7 @@ dependencies = [
     { name = "pytest" },
     { name = "ruff" },
     { name = "sqlalchemy" },
+    { name = "sqlalchemy-declarative-extensions" },
     { name = "testcontainers" },
 ]
 
@@ -153,6 +154,7 @@ requires-dist = [
     { name = "pytest", specifier = ">=9.0.2" },
     { name = "ruff", specifier = ">=0.15.5" },
     { name = "sqlalchemy", specifier = ">=2.0.48" },
+    { name = "sqlalchemy-declarative-extensions", specifier = ">=0.16.8" },
     { name = "testcontainers", specifier = ">=4.14.1" },
 ]
 
@@ -366,6 +368,18 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/c8/95/32107c4d13be077a9cae61e9ae49966a35dc4bf442a8852dd871db31f62e/sqlalchemy-2.0.48-cp314-cp314t-win32.whl", hash = "sha256:b8438ec5594980d405251451c5b7ea9aa58dda38eb7ac35fb7e4c696712ee24f", size = 2147209, upload-time = "2026-03-02T15:52:54.274Z" },
     { url = "https://files.pythonhosted.org/packages/d2/d7/1e073da7a4bc645eb83c76067284a0374e643bc4be57f14cc6414656f92c/sqlalchemy-2.0.48-cp314-cp314t-win_amd64.whl", hash = "sha256:d854b3970067297f3a7fbd7a4683587134aa9b3877ee15aa29eea478dc68f933", size = 2182198, upload-time = "2026-03-02T15:52:55.606Z" },
     { url = "https://files.pythonhosted.org/packages/46/2c/9664130905f03db57961b8980b05cab624afd114bf2be2576628a9f22da4/sqlalchemy-2.0.48-py3-none-any.whl", hash = "sha256:a66fe406437dd65cacd96a72689a3aaaecaebbcd62d81c5ac1c0fdbeac835096", size = 1940202, upload-time = "2026-03-02T15:52:43.285Z" },
+]
+
+[[package]]
+name = "sqlalchemy-declarative-extensions"
+version = "0.16.8"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "sqlalchemy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/48/02/dc6bde804aa5e9a684d3b2c93fe27854cd6a70b877ef4ffc92add0700f09/sqlalchemy_declarative_extensions-0.16.8.tar.gz", hash = "sha256:e197a0c838f944d8c177d3714795ff910dbbf8ed65075dafa97074d9f686b04f", size = 264471, upload-time = "2026-02-12T14:52:01.773Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/60/2d/087a5f713a9ff323bc256e103a59750c98b63c7e6c24c0622c4c54ded600/sqlalchemy_declarative_extensions-0.16.8-py3-none-any.whl", hash = "sha256:293332a69afaa2c9e096d342ce53bfd0d92b117ecc87e9055ac67e91690d8ac2", size = 109938, upload-time = "2026-02-12T14:52:00.278Z" },
 ]
 
 [[package]]
