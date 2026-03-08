@@ -127,7 +127,7 @@ class Tables(Base):
     table_id: Mapped[int] = mapped_column(primary_key=True)
     type_id: Mapped[int] = mapped_column(ForeignKey("game_types.type_id"))
     balance: Mapped[int]
-    openning_time: Mapped[datetime.datetime]
+    opening_time: Mapped[datetime.datetime]
     closing_time: Mapped[datetime.datetime]
 
 class SessionTables(Base):

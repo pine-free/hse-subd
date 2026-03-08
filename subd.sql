@@ -256,7 +256,7 @@ CREATE TABLE Tables
 (
 	table_ID             integer NOT NULL ,
 	balance              integer NULL ,
-	openning_time        datetime NULL ,
+	opening_time        datetime NULL ,
 	closing_time         char(18) NULL ,
 	type_ID              char(18) NOT NULL 
 )

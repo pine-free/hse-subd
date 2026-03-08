@@ -114,7 +114,7 @@ def upgrade() -> None:
     sa.Column('table_id', sa.Integer(), nullable=False),
     sa.Column('type_id', sa.Integer(), nullable=False),
     sa.Column('balance', sa.Integer(), nullable=True),
-    sa.Column('openning_time', sa.DateTime(), nullable=True),
+    sa.Column('opening_time', sa.DateTime(), nullable=True),
     sa.Column('closing_time', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['type_id'], ['game_types.type_id'], ),
     sa.PrimaryKeyConstraint('table_id')

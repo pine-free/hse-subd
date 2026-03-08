@@ -112,7 +112,7 @@ CREATE TABLE tables (
     table_id SERIAL NOT NULL, 
     type_id INTEGER NOT NULL, 
     balance INTEGER, 
-    openning_time TIMESTAMP WITHOUT TIME ZONE, 
+    opening_time TIMESTAMP WITHOUT TIME ZONE, 
     closing_time TIMESTAMP WITHOUT TIME ZONE, 
     PRIMARY KEY (table_id), 
     FOREIGN KEY(type_id) REFERENCES game_types (type_id)

@@ -85,7 +85,7 @@ class DbObjectsFactory:
         return Tables(
             type_id=type.type_id,
             balance=balance,
-            openning_time=opening_time,
+            opening_time=opening_time,
             closing_time=closing_time,
         )
 
