@@ -9,7 +9,7 @@ ensure_dealer_correct = PGFunction(
     RETURNS TRIGGER AS $ensure_dealer$
     DECLARE
         table_type_id integer;
-        should_be_supervised integer;
+        should_be_supervised boolean;
         BEGIN
             IF (TG_OP = 'INSERT') THEN
                 SELECT type_id INTO table_type_id FROM Tables WHERE table_id = NEW.table_id;

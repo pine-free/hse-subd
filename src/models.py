@@ -119,7 +119,7 @@ class GameTypes(Base):
 
     type_id: Mapped[int] = mapped_column(primary_key=True)
     game_type: Mapped[str] = mapped_column(String(20))
-    is_supervised: Mapped[int]
+    is_supervised: Mapped[bool]
 
 class Tables(Base):
     __tablename__ = "tables"

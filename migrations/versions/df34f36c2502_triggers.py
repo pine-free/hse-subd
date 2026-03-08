@@ -1,8 +1,8 @@
 """triggers
 
-Revision ID: f5902f34f223
-Revises: 12e7f89355fa
-Create Date: 2026-03-08 16:13:39.408742
+Revision ID: df34f36c2502
+Revises: 58d93c64ad83
+Create Date: 2026-03-08 16:18:21.194208
 
 """
 from typing import Sequence, Union
@@ -15,8 +15,8 @@ from alembic_utils.pg_trigger import PGTrigger
 from sqlalchemy import text as sql_text
 
 # revision identifiers, used by Alembic.
-revision: str = 'f5902f34f223'
-down_revision: Union[str, Sequence[str], None] = '12e7f89355fa'
+revision: str = 'df34f36c2502'
+down_revision: Union[str, Sequence[str], None] = '58d93c64ad83'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -27,7 +27,7 @@ def upgrade() -> None:
     public_ensure_dealer_correct = PGFunction(
         schema="public",
         signature="ensure_dealer_correct()",
-        definition="RETURNS TRIGGER AS $ensure_dealer$\n    DECLARE\n        table_type_id integer;\n        should_be_supervised integer;\n        BEGIN\n            IF (TG_OP = 'INSERT') THEN\n                SELECT type_id INTO table_type_id FROM Tables WHERE table_id = NEW.table_id;\n                SELECT is_supervised INTO should_be_supervised FROM game_types WHERE type_id = table_type_id;\n                IF (should_be_supervised = 1 AND NEW.staff_id IS NULL) THEN\n                    RAISE EXCEPTION 'Game type % should be supervised, missing dealer for session %',\n                        table_type_id, NEW.session_id;\n                ELSIF (should_be_supervised = 0 AND NEW.staff_id IS NOT NULL) THEN\n                    RAISE EXCEPTION 'Game type % should not be supervised, found dealer % for session %',\n                        table_type_id, NEW.staff_id, NEW.session_id;\n                END IF;\n                \n            END IF;\n            RETURN NULL;\n        END;\n    $ensure_dealer$ LANGUAGE plpgsql"
+        definition="RETURNS TRIGGER AS $ensure_dealer$\n    DECLARE\n        table_type_id integer;\n        should_be_supervised boolean;\n        BEGIN\n            IF (TG_OP = 'INSERT') THEN\n                SELECT type_id INTO table_type_id FROM Tables WHERE table_id = NEW.table_id;\n                SELECT is_supervised INTO should_be_supervised FROM game_types WHERE type_id = table_type_id;\n                IF (should_be_supervised = 1 AND NEW.staff_id IS NULL) THEN\n                    RAISE EXCEPTION 'Game type % should be supervised, missing dealer for session %',\n                        table_type_id, NEW.session_id;\n                ELSIF (should_be_supervised = 0 AND NEW.staff_id IS NOT NULL) THEN\n                    RAISE EXCEPTION 'Game type % should not be supervised, found dealer % for session %',\n                        table_type_id, NEW.staff_id, NEW.session_id;\n                END IF;\n                \n            END IF;\n            RETURN NULL;\n        END;\n    $ensure_dealer$ LANGUAGE plpgsql"
     )
     op.create_entity(public_ensure_dealer_correct)
 
@@ -122,7 +122,7 @@ def downgrade() -> None:
     public_ensure_dealer_correct = PGFunction(
         schema="public",
         signature="ensure_dealer_correct()",
-        definition="RETURNS TRIGGER AS $ensure_dealer$\n    DECLARE\n        table_type_id integer;\n        should_be_supervised integer;\n        BEGIN\n            IF (TG_OP = 'INSERT') THEN\n                SELECT type_id INTO table_type_id FROM Tables WHERE table_id = NEW.table_id;\n                SELECT is_supervised INTO should_be_supervised FROM game_types WHERE type_id = table_type_id;\n                IF (should_be_supervised = 1 AND NEW.staff_id IS NULL) THEN\n                    RAISE EXCEPTION 'Game type % should be supervised, missing dealer for session %',\n                        table_type_id, NEW.session_id;\n                ELSIF (should_be_supervised = 0 AND NEW.staff_id IS NOT NULL) THEN\n                    RAISE EXCEPTION 'Game type % should not be supervised, found dealer % for session %',\n                        table_type_id, NEW.staff_id, NEW.session_id;\n                END IF;\n                \n            END IF;\n            RETURN NULL;\n        END;\n    $ensure_dealer$ LANGUAGE plpgsql"
+        definition="RETURNS TRIGGER AS $ensure_dealer$\n    DECLARE\n        table_type_id integer;\n        should_be_supervised boolean;\n        BEGIN\n            IF (TG_OP = 'INSERT') THEN\n                SELECT type_id INTO table_type_id FROM Tables WHERE table_id = NEW.table_id;\n                SELECT is_supervised INTO should_be_supervised FROM game_types WHERE type_id = table_type_id;\n                IF (should_be_supervised = 1 AND NEW.staff_id IS NULL) THEN\n                    RAISE EXCEPTION 'Game type % should be supervised, missing dealer for session %',\n                        table_type_id, NEW.session_id;\n                ELSIF (should_be_supervised = 0 AND NEW.staff_id IS NOT NULL) THEN\n                    RAISE EXCEPTION 'Game type % should not be supervised, found dealer % for session %',\n                        table_type_id, NEW.staff_id, NEW.session_id;\n                END IF;\n                \n            END IF;\n            RETURN NULL;\n        END;\n    $ensure_dealer$ LANGUAGE plpgsql"
     )
     op.drop_entity(public_ensure_dealer_correct)
 

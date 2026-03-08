@@ -5,7 +5,7 @@ CREATE TABLE alembic_version (
     CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
 );
 
--- Running upgrade  -> 12e7f89355fa
+-- Running upgrade  -> 58d93c64ad83
 
 CREATE TABLE card (
     card_id SERIAL NOT NULL, 
@@ -37,7 +37,7 @@ CREATE TABLE drinks (
 CREATE TABLE game_types (
     type_id SERIAL NOT NULL, 
     game_type VARCHAR(20) NOT NULL, 
-    is_supervised INTEGER NOT NULL, 
+    is_supervised BOOLEAN NOT NULL, 
     PRIMARY KEY (type_id)
 );
 
@@ -151,14 +151,14 @@ CREATE TABLE split_order_by_card (
     FOREIGN KEY(order_id) REFERENCES orders (order_id)
 );
 
-INSERT INTO alembic_version (version_num) VALUES ('12e7f89355fa') RETURNING alembic_version.version_num;
+INSERT INTO alembic_version (version_num) VALUES ('58d93c64ad83') RETURNING alembic_version.version_num;
 
--- Running upgrade 12e7f89355fa -> f5902f34f223
+-- Running upgrade 58d93c64ad83 -> df34f36c2502
 
 CREATE FUNCTION "public"."ensure_dealer_correct"() RETURNS TRIGGER AS $ensure_dealer$
     DECLARE
         table_type_id integer;
-        should_be_supervised integer;
+        should_be_supervised boolean;
         BEGIN
             IF (TG_OP = 'INSERT') THEN
                 SELECT type_id INTO table_type_id FROM Tables WHERE table_id = NEW.table_id;
@@ -225,7 +225,7 @@ CREATE TRIGGER "update_card_bid_trigger" AFTER INSERT ON public.card_bid_within_
 
 CREATE TRIGGER "update_card_order_trigger" AFTER INSERT ON public.split_order_by_card FOR EACH ROW EXECUTE FUNCTION update_card_order();
 
-UPDATE alembic_version SET version_num='f5902f34f223' WHERE alembic_version.version_num = '12e7f89355fa';
+UPDATE alembic_version SET version_num='df34f36c2502' WHERE alembic_version.version_num = '58d93c64ad83';
 
 COMMIT;
 
