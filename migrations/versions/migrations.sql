@@ -5,31 +5,31 @@ CREATE TABLE alembic_version (
     CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
 );
 
--- Running upgrade  -> f59172111b03
+-- Running upgrade  -> 12e7f89355fa
 
 CREATE TABLE card (
     card_id SERIAL NOT NULL, 
-    balance INTEGER, 
+    balance INTEGER NOT NULL, 
     PRIMARY KEY (card_id)
 );
 
 CREATE TABLE clients (
     user_id SERIAL NOT NULL, 
-    name VARCHAR(20), 
-    surname VARCHAR(20), 
-    deposit INTEGER, 
-    address VARCHAR(20), 
+    name VARCHAR(20) NOT NULL, 
+    surname VARCHAR(20) NOT NULL, 
+    deposit INTEGER NOT NULL, 
+    address VARCHAR(20) NOT NULL, 
     credit INTEGER, 
     notes VARCHAR(20), 
-    age INTEGER, 
+    age INTEGER NOT NULL, 
     PRIMARY KEY (user_id)
 );
 
 CREATE TABLE drinks (
     drink_id SERIAL NOT NULL, 
-    name VARCHAR(20), 
-    price INTEGER, 
-    volume INTEGER, 
+    name VARCHAR(20) NOT NULL, 
+    price INTEGER NOT NULL, 
+    volume INTEGER NOT NULL, 
     category VARCHAR(20), 
     PRIMARY KEY (drink_id)
 );
@@ -43,22 +43,22 @@ CREATE TABLE game_types (
 
 CREATE TABLE session (
     session_id SERIAL NOT NULL, 
-    start_time TIMESTAMP WITHOUT TIME ZONE, 
-    end_time TIMESTAMP WITHOUT TIME ZONE, 
+    start_time TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+    end_time TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
     PRIMARY KEY (session_id)
 );
 
 CREATE TABLE staff (
     staff_id SERIAL NOT NULL, 
-    name VARCHAR(20), 
-    surname VARCHAR(20), 
-    address VARCHAR(20), 
-    age INTEGER, 
+    name VARCHAR(20) NOT NULL, 
+    surname VARCHAR(20) NOT NULL, 
+    address VARCHAR(20) NOT NULL, 
+    age INTEGER NOT NULL, 
     PRIMARY KEY (staff_id)
 );
 
 CREATE TABLE bar_supplies (
-    quantity INTEGER, 
+    quantity INTEGER NOT NULL, 
     drink_id INTEGER NOT NULL, 
     PRIMARY KEY (drink_id), 
     FOREIGN KEY(drink_id) REFERENCES drinks (drink_id)
@@ -76,8 +76,8 @@ CREATE TABLE card_bid_within_session (
     bid_id SERIAL NOT NULL, 
     session_id INTEGER NOT NULL, 
     card_id INTEGER NOT NULL, 
-    bid_amount INTEGER, 
-    money_gain INTEGER, 
+    bid_amount INTEGER NOT NULL, 
+    money_gain INTEGER NOT NULL, 
     PRIMARY KEY (bid_id), 
     FOREIGN KEY(card_id) REFERENCES card (card_id), 
     FOREIGN KEY(session_id) REFERENCES session (session_id)
@@ -87,8 +87,8 @@ CREATE TABLE cards_to_clients_dispenser (
     dispenser_id SERIAL NOT NULL, 
     user_id INTEGER NOT NULL, 
     card_id INTEGER NOT NULL, 
-    entry_time TIMESTAMP WITHOUT TIME ZONE, 
-    abandon_time TIMESTAMP WITHOUT TIME ZONE, 
+    entry_time TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+    abandon_time TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
     PRIMARY KEY (dispenser_id), 
     FOREIGN KEY(card_id) REFERENCES card (card_id), 
     FOREIGN KEY(user_id) REFERENCES clients (user_id)
@@ -111,17 +111,17 @@ CREATE TABLE security (
 CREATE TABLE tables (
     table_id SERIAL NOT NULL, 
     type_id INTEGER NOT NULL, 
-    balance INTEGER, 
-    opening_time TIMESTAMP WITHOUT TIME ZONE, 
-    closing_time TIMESTAMP WITHOUT TIME ZONE, 
+    balance INTEGER NOT NULL, 
+    opening_time TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
+    closing_time TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
     PRIMARY KEY (table_id), 
     FOREIGN KEY(type_id) REFERENCES game_types (type_id)
 );
 
 CREATE TABLE orders (
     order_id SERIAL NOT NULL, 
-    total INTEGER, 
-    order_time TIMESTAMP WITHOUT TIME ZONE, 
+    total INTEGER NOT NULL, 
+    order_time TIMESTAMP WITHOUT TIME ZONE NOT NULL, 
     staff_id INTEGER NOT NULL, 
     PRIMARY KEY (order_id), 
     FOREIGN KEY(staff_id) REFERENCES bartenders (staff_id)
@@ -151,9 +151,9 @@ CREATE TABLE split_order_by_card (
     FOREIGN KEY(order_id) REFERENCES orders (order_id)
 );
 
-INSERT INTO alembic_version (version_num) VALUES ('f59172111b03') RETURNING alembic_version.version_num;
+INSERT INTO alembic_version (version_num) VALUES ('12e7f89355fa') RETURNING alembic_version.version_num;
 
--- Running upgrade f59172111b03 -> 2cd28317d0d8
+-- Running upgrade 12e7f89355fa -> f5902f34f223
 
 CREATE FUNCTION "public"."ensure_dealer_correct"() RETURNS TRIGGER AS $ensure_dealer$
     DECLARE
@@ -225,7 +225,7 @@ CREATE TRIGGER "update_card_bid_trigger" AFTER INSERT ON public.card_bid_within_
 
 CREATE TRIGGER "update_card_order_trigger" AFTER INSERT ON public.split_order_by_card FOR EACH ROW EXECUTE FUNCTION update_card_order();
 
-UPDATE alembic_version SET version_num='2cd28317d0d8' WHERE alembic_version.version_num = 'f59172111b03';
+UPDATE alembic_version SET version_num='f5902f34f223' WHERE alembic_version.version_num = '12e7f89355fa';
 
 COMMIT;
 
