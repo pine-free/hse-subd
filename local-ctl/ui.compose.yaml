@@ -15,6 +15,7 @@ services:
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
     volumes:
       - ./lib/pgadmin/servers.json:/pgadmin4/servers.json
+      - ./lib/postgres/export:/export:rw
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
