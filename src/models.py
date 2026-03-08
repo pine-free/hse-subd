@@ -12,33 +12,33 @@ class Drinks(Base):
     __tablename__ = "drinks"
 
     drink_id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[Optional[str]] = mapped_column(String(20))
-    price: Mapped[Optional[int]]
-    volume: Mapped[Optional[int]]
+    name: Mapped[str] = mapped_column(String(20))
+    price: Mapped[int]
+    volume: Mapped[int]
     category: Mapped[Optional[str] ]= mapped_column(String(20))
 
 class BarSupplies(Base):
     __tablename__ = "bar_supplies"
 
-    quantity: Mapped[Optional[int]]
+    quantity: Mapped[int]
     drink_id: Mapped[int] = mapped_column(ForeignKey("drinks.drink_id"), primary_key=True)
 
 class Orders(Base):
     __tablename__ = "orders"
 
     order_id: Mapped[int] = mapped_column(primary_key=True)
-    total: Mapped[Optional[int]]
-    order_time: Mapped[Optional[datetime.datetime]]
+    total: Mapped[int]
+    order_time: Mapped[datetime.datetime]
     staff_id: Mapped[int] = mapped_column(ForeignKey("bartenders.staff_id"))
 
 class Staff(Base):
     __tablename__ = "staff"
 
     staff_id: Mapped[int] = mapped_column(primary_key=True, nullable=False)
-    name: Mapped[Optional[str]] = mapped_column(String(20))
-    surname: Mapped[Optional[str]] = mapped_column(String(20))
-    address: Mapped[Optional[str]] = mapped_column(String(20))
-    age: Mapped[Optional[int]]
+    name: Mapped[str] = mapped_column(String(20))
+    surname: Mapped[str] = mapped_column(String(20))
+    address: Mapped[str] = mapped_column(String(20))
+    age: Mapped[int]
 
 class Bartenders(Base):
     __tablename__ = "bartenders"
@@ -63,20 +63,20 @@ class Clients(Base):
     __tablename__ = "clients"
 
     user_id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[Optional[str]] = mapped_column(String(20))
-    surname: Mapped[Optional[str]] = mapped_column(String(20))
-    deposit: Mapped[Optional[int]]    
-    address: Mapped[Optional[str]] = mapped_column(String(20))
+    name: Mapped[str] = mapped_column(String(20))
+    surname: Mapped[str] = mapped_column(String(20))
+    deposit: Mapped[int]    
+    address: Mapped[str] = mapped_column(String(20))
     credit: Mapped[Optional[int]]    
     notes: Mapped[Optional[str]] = mapped_column(String(20))
-    age: Mapped[Optional[int]]
+    age: Mapped[int]
     
 
 class Card(Base):
     __tablename__ = "card"
 
     card_id: Mapped[int] = mapped_column(primary_key=True)
-    balance: Mapped[Optional[int]]
+    balance: Mapped[int]
 
 class CardsToClientsDispenser(Base):
     __tablename__ = "cards_to_clients_dispenser"
@@ -84,8 +84,8 @@ class CardsToClientsDispenser(Base):
     dispenser_id: Mapped[int] = mapped_column(primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("clients.user_id"))
     card_id: Mapped[int] = mapped_column(ForeignKey("card.card_id"))
-    entry_time: Mapped[Optional[datetime.datetime]]
-    abandon_time: Mapped[Optional[datetime.datetime]]
+    entry_time: Mapped[datetime.datetime]
+    abandon_time: Mapped[datetime.datetime]
 
 
 class SplitOrderByCard(Base):
@@ -102,8 +102,8 @@ class Session(Base):
     __tablename__ = "session"
 
     session_id: Mapped[int] = mapped_column(primary_key=True)
-    start_time: Mapped[Optional[datetime.datetime]]
-    end_time: Mapped[Optional[datetime.datetime]]
+    start_time: Mapped[datetime.datetime]
+    end_time: Mapped[datetime.datetime]
 
 class CardBidWithnSession(Base):
     __tablename__ = "card_bid_within_session"
@@ -111,8 +111,8 @@ class CardBidWithnSession(Base):
     bid_id: Mapped[int] = mapped_column(primary_key=True)
     session_id: Mapped[int] = mapped_column(ForeignKey("session.session_id"))
     card_id: Mapped[int] = mapped_column(ForeignKey("card.card_id"))
-    bid_amount: Mapped[Optional[int]]
-    money_gain: Mapped[Optional[int]]
+    bid_amount: Mapped[int]
+    money_gain: Mapped[int]
 
 class GameTypes(Base):
     __tablename__ = "game_types"
@@ -126,9 +126,9 @@ class Tables(Base):
 
     table_id: Mapped[int] = mapped_column(primary_key=True)
     type_id: Mapped[int] = mapped_column(ForeignKey("game_types.type_id"))
-    balance: Mapped[Optional[int]]
-    openning_time: Mapped[Optional[datetime.datetime]]
-    closing_time: Mapped[Optional[datetime.datetime]]
+    balance: Mapped[int]
+    openning_time: Mapped[datetime.datetime]
+    closing_time: Mapped[datetime.datetime]
 
 class SessionTables(Base):
     __tablename__ = "session_tables"
