@@ -3,6 +3,7 @@ from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
+from sqlalchemy_declarative_extensions import register_alembic_events
 
 from alembic import context
 
@@ -49,6 +50,7 @@ if xargs.get("add-triggers") == "1":
             update_card_order_trigger,
         ]
     )
+    register_alembic_events(schemas=True, databases=True, roles=True, grants=True)
 
 
 def run_migrations_offline() -> None:

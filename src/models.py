@@ -1,13 +1,44 @@
 from __future__ import annotations
 import datetime
 
-from typing import Optional
+from typing import Optional, ClassVar
 from sqlalchemy import String, ForeignKey, CheckConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy_declarative_extensions import declarative_database, Roles, Grants
+from sqlalchemy_declarative_extensions.dialects.postgresql import (
+    Role,
+    Grant,
+)
 
 
+@declarative_database
 class Base(DeclarativeBase):
-    pass
+    _ROLE_BARTENDER: ClassVar[Role] = Role(
+        "bartenders", login=True, password="bartenders"
+    )
+    _ROLE_PLAYERS: ClassVar[Role] = Role("players", login=True, password="players")
+    _ROLE_SECURITY: ClassVar[Role] = Role("security", login=True, password="security")
+
+    roles = Roles(ignore_unspecified=True).are(
+        _ROLE_BARTENDER, _ROLE_PLAYERS, _ROLE_SECURITY
+    )
+
+    grants = Grants(ignore_unspecified=True).are(
+        Grant.new("select", to=_ROLE_SECURITY).on_tables(
+            "clients", "cards_to_clients_dispenser", "security"
+        ),
+        Grant.new("select", to=_ROLE_BARTENDER).on_tables(
+            "bar_supplies", "drinks", "split_order_by_card", "orders", "bartenders"
+        ),
+        Grant.new("select", to=_ROLE_PLAYERS).on_tables(
+            "card",
+            "card_bid_within_session",
+            "session",
+            "session_tables",
+            "tables",
+            "game_types",
+        ),
+    )
 
 
 class Drinks(Base):
