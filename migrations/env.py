@@ -1,16 +1,27 @@
+from alembic_utils.replaceable_entity import register_entities
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
+from sqlalchemy_declarative_extensions import register_alembic_events
 
 from alembic import context
 
 from src.models import Base
+from src.triggers import (
+    ensure_dealer_correct,
+    ensure_dealer_trigger,
+    update_card_bid,
+    update_card_bid_trigger,
+    update_card_order,
+    update_card_order_trigger,
+)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 
+xargs = context.get_x_argument(as_dictionary=True)
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 if config.config_file_name is not None:
@@ -26,6 +37,20 @@ target_metadata = Base.metadata
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
+
+
+if xargs.get("add-triggers") == "1":
+    register_entities(
+        [
+            ensure_dealer_correct,
+            ensure_dealer_trigger,
+            update_card_bid,
+            update_card_bid_trigger,
+            update_card_order,
+            update_card_order_trigger,
+        ]
+    )
+    register_alembic_events(schemas=True, databases=True, roles=True, grants=True)
 
 
 def run_migrations_offline() -> None:
@@ -66,9 +91,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        context.configure(connection=connection, target_metadata=target_metadata)
 
         with context.begin_transaction():
             context.run_migrations()
