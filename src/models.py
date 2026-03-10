@@ -155,7 +155,7 @@ class Staff(Base):
 class Bartenders(Base):
     __tablename__ = "bartenders"
     __table_args__ = (
-        CheckConstraint("performance_rating >= 0 AND performance_rating <= 5"),
+        CheckConstraint("(performance_rating >= 0 AND performance_rating <= 5) OR performance_rating IS NULL"),
     )
 
     staff_id: Mapped[int] = mapped_column(
