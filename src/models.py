@@ -105,7 +105,9 @@ class Base(DeclarativeBase):
             "bar_supplies", "orders", "card"
         ),
         # Permissions according to bid update trigger
-        Grant.new("select", to=_ROLE_BID_TERMINAL).on_tables("card", "session", "card_bid_within_session", "session_tables"),
+        Grant.new("select", to=_ROLE_BID_TERMINAL).on_tables(
+            "card", "session", "card_bid_within_session", "session_tables", "tables"
+        ),
         Grant.new("insert", to=_ROLE_BID_TERMINAL).on_tables("card_bid_within_session"),
         Grant.new("usage", to=_ROLE_BID_TERMINAL).on_sequences(
             "card_bid_within_session_bid_id_seq"
@@ -155,7 +157,9 @@ class Staff(Base):
 class Bartenders(Base):
     __tablename__ = "bartenders"
     __table_args__ = (
-        CheckConstraint("(performance_rating >= 0 AND performance_rating <= 5) OR performance_rating IS NULL"),
+        CheckConstraint(
+            "(performance_rating >= 0 AND performance_rating <= 5) OR performance_rating IS NULL"
+        ),
     )
 
     staff_id: Mapped[int] = mapped_column(
