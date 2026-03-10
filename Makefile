@@ -25,3 +25,6 @@ migrations: container-up
 
 clean:
 	rm -rf ./migrations/versions/*
+
+test:
+	pytest tests 

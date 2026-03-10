@@ -2,7 +2,7 @@
 -- PostgreSQL database cluster dump
 --
 
-\restrict ewNf08EnxwtoqEkauavq8ck7OpplzXZTdS2CX7hO4FtFH7qhLgkP4aPgRu6Nzdx
+\restrict NTPFqDgZyQLvCIwI6HRY6fVNu28Lsg8j8p7vSmvsAuw97QePTCD9VrWpv3Z9v6h
 
 SET default_transaction_read_only = off;
 
@@ -76,7 +76,7 @@ GRANT staff TO security WITH INHERIT TRUE GRANTED BY postgres;
 
 
 
-\unrestrict ewNf08EnxwtoqEkauavq8ck7OpplzXZTdS2CX7hO4FtFH7qhLgkP4aPgRu6Nzdx
+\unrestrict NTPFqDgZyQLvCIwI6HRY6fVNu28Lsg8j8p7vSmvsAuw97QePTCD9VrWpv3Z9v6h
 
 --
 -- Databases
@@ -90,7 +90,7 @@ GRANT staff TO security WITH INHERIT TRUE GRANTED BY postgres;
 -- PostgreSQL database dump
 --
 
-\restrict GNb2GbixW5fia2BxU8CVC00dmbjI6m4YfgaSSmCRDsD12lu5TiggRewQOe5YXZy
+\restrict JD1dPZidh0Ue2rFCPORRk74hgglejoWDOjbUwqIPe5cVvbfMCIIpbSvLqkF8cSE
 
 -- Dumped from database version 16.10 (Debian 16.10-1.pgdg13+1)
 -- Dumped by pg_dump version 16.13 (Ubuntu 16.13-0ubuntu0.24.04.1)
@@ -117,9 +117,9 @@ CREATE DATABASE template1 WITH TEMPLATE = template0 ENCODING = 'UTF8' LOCALE_PRO
 
 ALTER DATABASE template1 OWNER TO postgres;
 
-\unrestrict GNb2GbixW5fia2BxU8CVC00dmbjI6m4YfgaSSmCRDsD12lu5TiggRewQOe5YXZy
+\unrestrict JD1dPZidh0Ue2rFCPORRk74hgglejoWDOjbUwqIPe5cVvbfMCIIpbSvLqkF8cSE
 \connect template1
-\restrict GNb2GbixW5fia2BxU8CVC00dmbjI6m4YfgaSSmCRDsD12lu5TiggRewQOe5YXZy
+\restrict JD1dPZidh0Ue2rFCPORRk74hgglejoWDOjbUwqIPe5cVvbfMCIIpbSvLqkF8cSE
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -146,9 +146,9 @@ COMMENT ON DATABASE template1 IS 'default template for new databases';
 ALTER DATABASE template1 IS_TEMPLATE = true;
 
 
-\unrestrict GNb2GbixW5fia2BxU8CVC00dmbjI6m4YfgaSSmCRDsD12lu5TiggRewQOe5YXZy
+\unrestrict JD1dPZidh0Ue2rFCPORRk74hgglejoWDOjbUwqIPe5cVvbfMCIIpbSvLqkF8cSE
 \connect template1
-\restrict GNb2GbixW5fia2BxU8CVC00dmbjI6m4YfgaSSmCRDsD12lu5TiggRewQOe5YXZy
+\restrict JD1dPZidh0Ue2rFCPORRk74hgglejoWDOjbUwqIPe5cVvbfMCIIpbSvLqkF8cSE
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -173,7 +173,7 @@ GRANT CONNECT ON DATABASE template1 TO PUBLIC;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict GNb2GbixW5fia2BxU8CVC00dmbjI6m4YfgaSSmCRDsD12lu5TiggRewQOe5YXZy
+\unrestrict JD1dPZidh0Ue2rFCPORRk74hgglejoWDOjbUwqIPe5cVvbfMCIIpbSvLqkF8cSE
 
 --
 -- Database "postgres" dump
@@ -183,7 +183,7 @@ GRANT CONNECT ON DATABASE template1 TO PUBLIC;
 -- PostgreSQL database dump
 --
 
-\restrict aPYw1hXd5O4ye2suk5NJh1boJzUcuBW75nL5QaZNO3MJWIbLof1wghZ3zr48cHd
+\restrict ivbsAtHPJJ3JhD8BnsSmQadt0ahSRQcr7JpWe571FwLsvjPFxB09PyfIQWyHzEa
 
 -- Dumped from database version 16.10 (Debian 16.10-1.pgdg13+1)
 -- Dumped by pg_dump version 16.13 (Ubuntu 16.13-0ubuntu0.24.04.1)
@@ -209,9 +209,9 @@ CREATE DATABASE postgres WITH TEMPLATE = template0 ENCODING = 'UTF8' LOCALE_PROV
 
 ALTER DATABASE postgres OWNER TO postgres;
 
-\unrestrict aPYw1hXd5O4ye2suk5NJh1boJzUcuBW75nL5QaZNO3MJWIbLof1wghZ3zr48cHd
+\unrestrict ivbsAtHPJJ3JhD8BnsSmQadt0ahSRQcr7JpWe571FwLsvjPFxB09PyfIQWyHzEa
 \connect postgres
-\restrict aPYw1hXd5O4ye2suk5NJh1boJzUcuBW75nL5QaZNO3MJWIbLof1wghZ3zr48cHd
+\restrict ivbsAtHPJJ3JhD8BnsSmQadt0ahSRQcr7JpWe571FwLsvjPFxB09PyfIQWyHzEa
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -235,9 +235,7 @@ COMMENT ON DATABASE postgres IS 'default administrative connection database';
 -- Name: ensure_dealer_correct(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.ensure_dealer_correct() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
+CREATE FUNCTION "public"."ensure_dealer_correct"() RETURNS TRIGGER AS $ensure_dealer$
     DECLARE
         table_type_id integer;
         should_be_supervised boolean;
@@ -245,10 +243,10 @@ CREATE FUNCTION public.ensure_dealer_correct() RETURNS trigger
             IF (TG_OP = 'INSERT') THEN
                 SELECT type_id INTO table_type_id FROM Tables WHERE table_id = NEW.table_id;
                 SELECT is_supervised INTO should_be_supervised FROM game_types WHERE type_id = table_type_id;
-                IF (should_be_supervised = 1 AND NEW.staff_id IS NULL) THEN
+                IF (should_be_supervised AND NEW.staff_id IS NULL) THEN
                     RAISE EXCEPTION 'Game type % should be supervised, missing dealer for session %',
                         table_type_id, NEW.session_id;
-                ELSIF (should_be_supervised = 0 AND NEW.staff_id IS NOT NULL) THEN
+                ELSIF (NOT should_be_supervised AND NEW.staff_id IS NOT NULL) THEN
                     RAISE EXCEPTION 'Game type % should not be supervised, found dealer % for session %',
                         table_type_id, NEW.staff_id, NEW.session_id;
                 END IF;
@@ -256,7 +254,7 @@ CREATE FUNCTION public.ensure_dealer_correct() RETURNS trigger
             END IF;
             RETURN NULL;
         END;
-    $$;
+    $ensure_dealer$ LANGUAGE plpgsql;
 
 
 ALTER FUNCTION public.ensure_dealer_correct() OWNER TO postgres;
@@ -265,22 +263,23 @@ ALTER FUNCTION public.ensure_dealer_correct() OWNER TO postgres;
 -- Name: update_card_bid(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.update_card_bid() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
+CREATE FUNCTION "public"."update_card_bid"() RETURNS TRIGGER AS $update_card_bid$
     DECLARE
         card_balance integer;
+        money_delta integer;
     BEGIN
         IF (TG_OP = 'INSERT') THEN
             SELECT balance FROM card INTO card_balance WHERE card_id = NEW.card_id;
+            money_delta := NEW.bid_amount - NEW.money_gain;
             IF (NEW.bid_amount > card_balance) THEN
                 RAISE EXCEPTION 'Cannot bet more money than the card has';
             END IF;
-            UPDATE card SET balance = balance - NEW.bid_amount + NEW.money_gain WHERE card_id = NEW.card_id;
+            UPDATE card SET balance = balance - money_delta WHERE card_id = NEW.card_id;
+            UPDATE tables SET balance = balance + money_delta WHERE table_id = (SELECT table_id FROM session_tables WHERE session_id = NEW.session_id);
         END IF;
         RETURN NULL;
     END;
-    $$;
+    $update_card_bid$ LANGUAGE plpgsql;
 
 
 ALTER FUNCTION public.update_card_bid() OWNER TO postgres;
@@ -289,9 +288,7 @@ ALTER FUNCTION public.update_card_bid() OWNER TO postgres;
 -- Name: update_card_order(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.update_card_order() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
+CREATE FUNCTION "public"."update_card_order"() RETURNS TRIGGER AS $update_card_order$
     DECLARE
         card_balance integer;
         order_total integer;
@@ -317,7 +314,8 @@ CREATE FUNCTION public.update_card_order() RETURNS trigger
         END IF;
         RETURN NULL;
     END;
-    $$;
+    $update_card_order$ LANGUAGE plpgsql;
+
 
 
 ALTER FUNCTION public.update_card_order() OWNER TO postgres;
@@ -974,6 +972,7 @@ COPY public.clients (user_id, name, surname, deposit, address, credit, notes, ag
 --
 
 COPY public.dealers (staff_id, qualification) FROM stdin;
+2	\N
 \.
 
 
@@ -1017,6 +1016,8 @@ COPY public.security (staff_id, zone) FROM stdin;
 --
 
 COPY public.session (session_id, start_time, end_time) FROM stdin;
+1	2022-12-20 13:00:00	2022-12-20 14:00:00
+2	2022-12-20 13:00:00	2022-12-20 14:00:00
 \.
 
 
@@ -1042,6 +1043,7 @@ COPY public.split_order_by_card (split_order_id, card_id, order_id, drink_id, qu
 
 COPY public.staff (staff_id, name, surname, address, age) FROM stdin;
 1	lol	kek	cheburek	69
+2	amy	dealertine	dealertown	33
 \.
 
 
@@ -1050,6 +1052,8 @@ COPY public.staff (staff_id, name, surname, address, age) FROM stdin;
 --
 
 COPY public.tables (table_id, type_id, balance, opening_time, closing_time) FROM stdin;
+1	1	0	2022-12-20 10:00:00	2022-12-20 18:00:00
+2	3	0	2022-12-20 10:00:00	2022-12-20 18:00:00
 \.
 
 
@@ -1106,14 +1110,14 @@ SELECT pg_catalog.setval('public.orders_order_id_seq', 1, false);
 -- Name: session_session_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.session_session_id_seq', 1, false);
+SELECT pg_catalog.setval('public.session_session_id_seq', 2, true);
 
 
 --
 -- Name: session_tables_session_to_table_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.session_tables_session_to_table_id_seq', 1, false);
+SELECT pg_catalog.setval('public.session_tables_session_to_table_id_seq', 1, true);
 
 
 --
@@ -1127,14 +1131,14 @@ SELECT pg_catalog.setval('public.split_order_by_card_split_order_id_seq', 1, fal
 -- Name: staff_staff_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.staff_staff_id_seq', 1, true);
+SELECT pg_catalog.setval('public.staff_staff_id_seq', 2, true);
 
 
 --
 -- Name: tables_table_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.tables_table_id_seq', 1, false);
+SELECT pg_catalog.setval('public.tables_table_id_seq', 2, true);
 
 
 --
@@ -1589,7 +1593,7 @@ GRANT SELECT ON TABLE public.tables TO players;
 -- PostgreSQL database dump complete
 --
 
-\unrestrict aPYw1hXd5O4ye2suk5NJh1boJzUcuBW75nL5QaZNO3MJWIbLof1wghZ3zr48cHd
+\unrestrict ivbsAtHPJJ3JhD8BnsSmQadt0ahSRQcr7JpWe571FwLsvjPFxB09PyfIQWyHzEa
 
 --
 -- PostgreSQL database cluster dump complete

@@ -105,12 +105,12 @@ class Base(DeclarativeBase):
             "bar_supplies", "orders", "card"
         ),
         # Permissions according to bid update trigger
-        Grant.new("select", to=_ROLE_BID_TERMINAL).on_tables("card", "session", "card_bid_within_session"),
+        Grant.new("select", to=_ROLE_BID_TERMINAL).on_tables("card", "session", "card_bid_within_session", "session_tables"),
         Grant.new("insert", to=_ROLE_BID_TERMINAL).on_tables("card_bid_within_session"),
         Grant.new("usage", to=_ROLE_BID_TERMINAL).on_sequences(
             "card_bid_within_session_bid_id_seq"
         ),
-        Grant.new("update", to=_ROLE_BID_TERMINAL).on_tables("card"),
+        Grant.new("update", to=_ROLE_BID_TERMINAL).on_tables("card", "tables"),
     )
 
 

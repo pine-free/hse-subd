@@ -1,8 +1,13 @@
+import logging
+
 import sqlalchemy
 import sqlalchemy.exc
 import pytest
 import datetime
 from contextlib import contextmanager
+
+logger = logging.getLogger(__name__)
+
 
 from src.models import (
     Base,
@@ -67,6 +72,7 @@ def db_session(db_engine: Engine) -> Callable[[], Generator[Session]]:
             session.close()
 
     return _get_session
+
 
 class DbObjectsFactory:
     def __init__(self) -> None:
@@ -151,10 +157,30 @@ def test_card_insert_bid_win(
         session.begin()
         card = Card(balance=100)
         game_session = DbObjectsFactory.get_game_session()
-        session.add_all([card, game_session])
+        game_type = GameTypes(game_type="automaton", is_supervised=False)
+        session.add_all([card, game_session, game_type])
         session.commit()
 
         session.begin()
+        table = DbObjectsFactory.get_table(game_type)
+        session.add(table)
+        session.commit()
+
+        session.begin()
+        s_table_mapping = SessionTables(
+            session_id=game_session.session_id, table_id=table.table_id
+        )
+        session.add(s_table_mapping)
+        session.commit()
+
+        session.begin()
+        logger.info(
+            session.execute(
+                text(
+                    f"SELECT privilege_type, table_name FROM information_schema.role_table_grants WHERE grantee = '{Base._ROLE_BID_TERMINAL.name}';"
+                )
+            ).all()
+        )
         switch_role(session, Base._ROLE_BID_TERMINAL.name)
         bid = CardBidWithnSession(
             session_id=game_session.session_id,
@@ -167,6 +193,7 @@ def test_card_insert_bid_win(
 
         session.begin()
         assert card.balance == 70
+        assert table.balance == 30
         session.commit()
     cleanup_tables([CardBidWithnSession, Card, GameSession])
 

@@ -5,7 +5,7 @@ CREATE TABLE alembic_version (
     CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num)
 );
 
--- Running upgrade  -> ce6c88068eeb
+-- Running upgrade  -> bab89c850b88
 
 CREATE TABLE card (
     card_id SERIAL NOT NULL, 
@@ -68,7 +68,7 @@ CREATE TABLE bartenders (
     staff_id INTEGER NOT NULL, 
     performance_rating INTEGER, 
     PRIMARY KEY (staff_id), 
-    CHECK (performance_rating >= 0 AND performance_rating <= 5), 
+    CHECK ((performance_rating >= 0 AND performance_rating <= 5) OR performance_rating IS NULL), 
     FOREIGN KEY(staff_id) REFERENCES staff (staff_id)
 );
 
@@ -151,9 +151,9 @@ CREATE TABLE split_order_by_card (
     FOREIGN KEY(order_id) REFERENCES orders (order_id)
 );
 
-INSERT INTO alembic_version (version_num) VALUES ('ce6c88068eeb') RETURNING alembic_version.version_num;
+INSERT INTO alembic_version (version_num) VALUES ('bab89c850b88') RETURNING alembic_version.version_num;
 
--- Running upgrade ce6c88068eeb -> 4d8457546134
+-- Running upgrade bab89c850b88 -> ce898cfe72e3
 
 CREATE ROLE "staff" WITH NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN NOREPLICATION NOBYPASSRLS PASSWORD 'staff';;
 
@@ -185,7 +185,7 @@ GRANT USAGE ON SEQUENCE "split_order_by_card_split_order_id_seq" TO "order_termi
 
 GRANT SELECT ON TABLE "bar_supplies" TO "bartenders";;
 
-GRANT UPDATE, SELECT ON TABLE "bar_supplies" TO "order_terminal";;
+GRANT SELECT, UPDATE ON TABLE "bar_supplies" TO "order_terminal";;
 
 GRANT SELECT ON TABLE "bartenders" TO "bartenders";;
 
@@ -193,7 +193,7 @@ GRANT SELECT ON TABLE "bartenders" TO "order_terminal";;
 
 GRANT SELECT, UPDATE ON TABLE "card" TO "bid_terminal";;
 
-GRANT INSERT, SELECT ON TABLE "card" TO "card_dispenser";;
+GRANT SELECT, INSERT ON TABLE "card" TO "card_dispenser";;
 
 GRANT SELECT ON TABLE "card" TO "card_reader";;
 
@@ -205,7 +205,7 @@ GRANT SELECT ON TABLE "card_bid_within_session" TO "dealers";;
 
 GRANT SELECT ON TABLE "card_bid_within_session" TO "players";;
 
-GRANT SELECT, INSERT ON TABLE "cards_to_clients_dispenser" TO "card_dispenser";;
+GRANT INSERT, SELECT ON TABLE "cards_to_clients_dispenser" TO "card_dispenser";;
 
 GRANT SELECT ON TABLE "cards_to_clients_dispenser" TO "security";;
 
@@ -223,7 +223,7 @@ GRANT SELECT ON TABLE "game_types" TO "players";;
 
 GRANT SELECT ON TABLE "orders" TO "bartenders";;
 
-GRANT UPDATE, SELECT, INSERT ON TABLE "orders" TO "order_terminal";;
+GRANT UPDATE, INSERT, SELECT ON TABLE "orders" TO "order_terminal";;
 
 GRANT SELECT ON TABLE "security" TO "security";;
 
@@ -232,6 +232,8 @@ GRANT SELECT ON TABLE "session" TO "bid_terminal";;
 GRANT SELECT ON TABLE "session" TO "dealers";;
 
 GRANT SELECT ON TABLE "session" TO "players";;
+
+GRANT SELECT ON TABLE "session_tables" TO "bid_terminal";;
 
 GRANT SELECT ON TABLE "session_tables" TO "dealers";;
 
@@ -242,6 +244,8 @@ GRANT SELECT ON TABLE "split_order_by_card" TO "bartenders";;
 GRANT SELECT, INSERT ON TABLE "split_order_by_card" TO "order_terminal";;
 
 GRANT SELECT ON TABLE "staff" TO "staff";;
+
+GRANT UPDATE ON TABLE "tables" TO "bid_terminal";;
 
 GRANT SELECT ON TABLE "tables" TO "dealers";;
 
@@ -255,10 +259,10 @@ CREATE FUNCTION "public"."ensure_dealer_correct"() RETURNS TRIGGER AS $ensure_de
             IF (TG_OP = 'INSERT') THEN
                 SELECT type_id INTO table_type_id FROM Tables WHERE table_id = NEW.table_id;
                 SELECT is_supervised INTO should_be_supervised FROM game_types WHERE type_id = table_type_id;
-                IF (should_be_supervised = 1 AND NEW.staff_id IS NULL) THEN
+                IF (should_be_supervised = true AND NEW.staff_id IS NULL) THEN
                     RAISE EXCEPTION 'Game type % should be supervised, missing dealer for session %',
                         table_type_id, NEW.session_id;
-                ELSIF (should_be_supervised = 0 AND NEW.staff_id IS NOT NULL) THEN
+                ELSIF (should_be_supervised = false AND NEW.staff_id IS NOT NULL) THEN
                     RAISE EXCEPTION 'Game type % should not be supervised, found dealer % for session %',
                         table_type_id, NEW.staff_id, NEW.session_id;
                 END IF;
@@ -271,13 +275,16 @@ CREATE FUNCTION "public"."ensure_dealer_correct"() RETURNS TRIGGER AS $ensure_de
 CREATE FUNCTION "public"."update_card_bid"() RETURNS TRIGGER AS $update_card_bid$
     DECLARE
         card_balance integer;
+        money_delta integer;
     BEGIN
         IF (TG_OP = 'INSERT') THEN
             SELECT balance FROM card INTO card_balance WHERE card_id = NEW.card_id;
+            money_delta := NEW.bid_amount - NEW.money_gain;
             IF (NEW.bid_amount > card_balance) THEN
                 RAISE EXCEPTION 'Cannot bet more money than the card has';
             END IF;
-            UPDATE card SET balance = balance - NEW.bid_amount + NEW.money_gain WHERE card_id = NEW.card_id;
+            UPDATE card SET balance = balance - money_delta WHERE card_id = NEW.card_id;
+            UPDATE tables SET balance = balance + money_delta WHERE table_id = (SELECT table_id FROM session_tables WHERE session_id = NEW.session_id);
         END IF;
         RETURN NULL;
     END;
@@ -317,7 +324,7 @@ CREATE TRIGGER "update_card_bid_trigger" AFTER INSERT ON public.card_bid_within_
 
 CREATE TRIGGER "update_card_order_trigger" AFTER INSERT ON public.split_order_by_card FOR EACH ROW EXECUTE FUNCTION update_card_order();
 
-UPDATE alembic_version SET version_num='4d8457546134' WHERE alembic_version.version_num = 'ce6c88068eeb';
+UPDATE alembic_version SET version_num='ce898cfe72e3' WHERE alembic_version.version_num = 'bab89c850b88';
 
 COMMIT;
 

@@ -1,8 +1,8 @@
 """triggers
 
-Revision ID: 4d8457546134
-Revises: ce6c88068eeb
-Create Date: 2026-03-08 21:49:54.970385
+Revision ID: ce898cfe72e3
+Revises: bab89c850b88
+Create Date: 2026-03-10 14:06:15.854592
 
 """
 from typing import Sequence, Union
@@ -15,8 +15,8 @@ from alembic_utils.pg_trigger import PGTrigger
 from sqlalchemy import text as sql_text
 
 # revision identifiers, used by Alembic.
-revision: str = '4d8457546134'
-down_revision: Union[str, Sequence[str], None] = 'ce6c88068eeb'
+revision: str = 'ce898cfe72e3'
+down_revision: Union[str, Sequence[str], None] = 'bab89c850b88'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -39,17 +39,17 @@ def upgrade() -> None:
     op.execute(sa.text("""GRANT USAGE ON SEQUENCE "orders_order_id_seq" TO "order_terminal";"""))
     op.execute(sa.text("""GRANT USAGE ON SEQUENCE "split_order_by_card_split_order_id_seq" TO "order_terminal";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "bar_supplies" TO "bartenders";"""))
-    op.execute(sa.text("""GRANT UPDATE, SELECT ON TABLE "bar_supplies" TO "order_terminal";"""))
+    op.execute(sa.text("""GRANT SELECT, UPDATE ON TABLE "bar_supplies" TO "order_terminal";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "bartenders" TO "bartenders";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "bartenders" TO "order_terminal";"""))
     op.execute(sa.text("""GRANT SELECT, UPDATE ON TABLE "card" TO "bid_terminal";"""))
-    op.execute(sa.text("""GRANT INSERT, SELECT ON TABLE "card" TO "card_dispenser";"""))
+    op.execute(sa.text("""GRANT SELECT, INSERT ON TABLE "card" TO "card_dispenser";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "card" TO "card_reader";"""))
     op.execute(sa.text("""GRANT SELECT, UPDATE ON TABLE "card" TO "order_terminal";"""))
     op.execute(sa.text("""GRANT SELECT, INSERT ON TABLE "card_bid_within_session" TO "bid_terminal";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "card_bid_within_session" TO "dealers";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "card_bid_within_session" TO "players";"""))
-    op.execute(sa.text("""GRANT SELECT, INSERT ON TABLE "cards_to_clients_dispenser" TO "card_dispenser";"""))
+    op.execute(sa.text("""GRANT INSERT, SELECT ON TABLE "cards_to_clients_dispenser" TO "card_dispenser";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "cards_to_clients_dispenser" TO "security";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "clients" TO "security";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "dealers" TO "dealers";"""))
@@ -58,29 +58,31 @@ def upgrade() -> None:
     op.execute(sa.text("""GRANT SELECT ON TABLE "game_types" TO "dealers";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "game_types" TO "players";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "orders" TO "bartenders";"""))
-    op.execute(sa.text("""GRANT UPDATE, SELECT, INSERT ON TABLE "orders" TO "order_terminal";"""))
+    op.execute(sa.text("""GRANT UPDATE, INSERT, SELECT ON TABLE "orders" TO "order_terminal";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "security" TO "security";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "session" TO "bid_terminal";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "session" TO "dealers";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "session" TO "players";"""))
+    op.execute(sa.text("""GRANT SELECT ON TABLE "session_tables" TO "bid_terminal";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "session_tables" TO "dealers";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "session_tables" TO "players";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "split_order_by_card" TO "bartenders";"""))
     op.execute(sa.text("""GRANT SELECT, INSERT ON TABLE "split_order_by_card" TO "order_terminal";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "staff" TO "staff";"""))
+    op.execute(sa.text("""GRANT UPDATE ON TABLE "tables" TO "bid_terminal";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "tables" TO "dealers";"""))
     op.execute(sa.text("""GRANT SELECT ON TABLE "tables" TO "players";"""))
     public_ensure_dealer_correct = PGFunction(
         schema="public",
         signature="ensure_dealer_correct()",
-        definition="RETURNS TRIGGER AS $ensure_dealer$\n    DECLARE\n        table_type_id integer;\n        should_be_supervised boolean;\n        BEGIN\n            IF (TG_OP = 'INSERT') THEN\n                SELECT type_id INTO table_type_id FROM Tables WHERE table_id = NEW.table_id;\n                SELECT is_supervised INTO should_be_supervised FROM game_types WHERE type_id = table_type_id;\n                IF (should_be_supervised = 1 AND NEW.staff_id IS NULL) THEN\n                    RAISE EXCEPTION 'Game type % should be supervised, missing dealer for session %',\n                        table_type_id, NEW.session_id;\n                ELSIF (should_be_supervised = 0 AND NEW.staff_id IS NOT NULL) THEN\n                    RAISE EXCEPTION 'Game type % should not be supervised, found dealer % for session %',\n                        table_type_id, NEW.staff_id, NEW.session_id;\n                END IF;\n                \n            END IF;\n            RETURN NULL;\n        END;\n    $ensure_dealer$ LANGUAGE plpgsql"
+        definition="RETURNS TRIGGER AS $ensure_dealer$\n    DECLARE\n        table_type_id integer;\n        should_be_supervised boolean;\n        BEGIN\n            IF (TG_OP = 'INSERT') THEN\n                SELECT type_id INTO table_type_id FROM Tables WHERE table_id = NEW.table_id;\n                SELECT is_supervised INTO should_be_supervised FROM game_types WHERE type_id = table_type_id;\n                IF (should_be_supervised = true AND NEW.staff_id IS NULL) THEN\n                    RAISE EXCEPTION 'Game type % should be supervised, missing dealer for session %',\n                        table_type_id, NEW.session_id;\n                ELSIF (should_be_supervised = false AND NEW.staff_id IS NOT NULL) THEN\n                    RAISE EXCEPTION 'Game type % should not be supervised, found dealer % for session %',\n                        table_type_id, NEW.staff_id, NEW.session_id;\n                END IF;\n                \n            END IF;\n            RETURN NULL;\n        END;\n    $ensure_dealer$ LANGUAGE plpgsql"
     )
     op.create_entity(public_ensure_dealer_correct)
 
     public_update_card_bid = PGFunction(
         schema="public",
         signature="update_card_bid()",
-        definition="RETURNS TRIGGER AS $update_card_bid$\n    DECLARE\n        card_balance integer;\n    BEGIN\n        IF (TG_OP = 'INSERT') THEN\n            SELECT balance FROM card INTO card_balance WHERE card_id = NEW.card_id;\n            IF (NEW.bid_amount > card_balance) THEN\n                RAISE EXCEPTION 'Cannot bet more money than the card has';\n            END IF;\n            UPDATE card SET balance = balance - NEW.bid_amount + NEW.money_gain WHERE card_id = NEW.card_id;\n        END IF;\n        RETURN NULL;\n    END;\n    $update_card_bid$ LANGUAGE plpgsql"
+        definition="RETURNS TRIGGER AS $update_card_bid$\n    DECLARE\n        card_balance integer;\n        money_delta integer;\n    BEGIN\n        IF (TG_OP = 'INSERT') THEN\n            SELECT balance FROM card INTO card_balance WHERE card_id = NEW.card_id;\n            money_delta := NEW.bid_amount - NEW.money_gain;\n            IF (NEW.bid_amount > card_balance) THEN\n                RAISE EXCEPTION 'Cannot bet more money than the card has';\n            END IF;\n            UPDATE card SET balance = balance - money_delta WHERE card_id = NEW.card_id;\n            UPDATE tables SET balance = balance + money_delta WHERE table_id = (SELECT table_id FROM session_tables WHERE session_id = NEW.session_id);\n        END IF;\n        RETURN NULL;\n    END;\n    $update_card_bid$ LANGUAGE plpgsql"
     )
     op.create_entity(public_update_card_bid)
 
@@ -161,29 +163,31 @@ def downgrade() -> None:
     public_update_card_bid = PGFunction(
         schema="public",
         signature="update_card_bid()",
-        definition="RETURNS TRIGGER AS $update_card_bid$\n    DECLARE\n        card_balance integer;\n    BEGIN\n        IF (TG_OP = 'INSERT') THEN\n            SELECT balance FROM card INTO card_balance WHERE card_id = NEW.card_id;\n            IF (NEW.bid_amount > card_balance) THEN\n                RAISE EXCEPTION 'Cannot bet more money than the card has';\n            END IF;\n            UPDATE card SET balance = balance - NEW.bid_amount + NEW.money_gain WHERE card_id = NEW.card_id;\n        END IF;\n        RETURN NULL;\n    END;\n    $update_card_bid$ LANGUAGE plpgsql"
+        definition="RETURNS TRIGGER AS $update_card_bid$\n    DECLARE\n        card_balance integer;\n        money_delta integer;\n    BEGIN\n        IF (TG_OP = 'INSERT') THEN\n            SELECT balance FROM card INTO card_balance WHERE card_id = NEW.card_id;\n            money_delta := NEW.bid_amount - NEW.money_gain;\n            IF (NEW.bid_amount > card_balance) THEN\n                RAISE EXCEPTION 'Cannot bet more money than the card has';\n            END IF;\n            UPDATE card SET balance = balance - money_delta WHERE card_id = NEW.card_id;\n            UPDATE tables SET balance = balance + money_delta WHERE table_id = (SELECT table_id FROM session_tables WHERE session_id = NEW.session_id);\n        END IF;\n        RETURN NULL;\n    END;\n    $update_card_bid$ LANGUAGE plpgsql"
     )
     op.drop_entity(public_update_card_bid)
 
     public_ensure_dealer_correct = PGFunction(
         schema="public",
         signature="ensure_dealer_correct()",
-        definition="RETURNS TRIGGER AS $ensure_dealer$\n    DECLARE\n        table_type_id integer;\n        should_be_supervised boolean;\n        BEGIN\n            IF (TG_OP = 'INSERT') THEN\n                SELECT type_id INTO table_type_id FROM Tables WHERE table_id = NEW.table_id;\n                SELECT is_supervised INTO should_be_supervised FROM game_types WHERE type_id = table_type_id;\n                IF (should_be_supervised = 1 AND NEW.staff_id IS NULL) THEN\n                    RAISE EXCEPTION 'Game type % should be supervised, missing dealer for session %',\n                        table_type_id, NEW.session_id;\n                ELSIF (should_be_supervised = 0 AND NEW.staff_id IS NOT NULL) THEN\n                    RAISE EXCEPTION 'Game type % should not be supervised, found dealer % for session %',\n                        table_type_id, NEW.staff_id, NEW.session_id;\n                END IF;\n                \n            END IF;\n            RETURN NULL;\n        END;\n    $ensure_dealer$ LANGUAGE plpgsql"
+        definition="RETURNS TRIGGER AS $ensure_dealer$\n    DECLARE\n        table_type_id integer;\n        should_be_supervised boolean;\n        BEGIN\n            IF (TG_OP = 'INSERT') THEN\n                SELECT type_id INTO table_type_id FROM Tables WHERE table_id = NEW.table_id;\n                SELECT is_supervised INTO should_be_supervised FROM game_types WHERE type_id = table_type_id;\n                IF (should_be_supervised = true AND NEW.staff_id IS NULL) THEN\n                    RAISE EXCEPTION 'Game type % should be supervised, missing dealer for session %',\n                        table_type_id, NEW.session_id;\n                ELSIF (should_be_supervised = false AND NEW.staff_id IS NOT NULL) THEN\n                    RAISE EXCEPTION 'Game type % should not be supervised, found dealer % for session %',\n                        table_type_id, NEW.staff_id, NEW.session_id;\n                END IF;\n                \n            END IF;\n            RETURN NULL;\n        END;\n    $ensure_dealer$ LANGUAGE plpgsql"
     )
     op.drop_entity(public_ensure_dealer_correct)
 
     op.execute(sa.text("""REVOKE SELECT ON TABLE "tables" FROM "players";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "tables" FROM "dealers";"""))
+    op.execute(sa.text("""REVOKE UPDATE ON TABLE "tables" FROM "bid_terminal";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "staff" FROM "staff";"""))
     op.execute(sa.text("""REVOKE SELECT, INSERT ON TABLE "split_order_by_card" FROM "order_terminal";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "split_order_by_card" FROM "bartenders";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "session_tables" FROM "players";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "session_tables" FROM "dealers";"""))
+    op.execute(sa.text("""REVOKE SELECT ON TABLE "session_tables" FROM "bid_terminal";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "session" FROM "players";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "session" FROM "dealers";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "session" FROM "bid_terminal";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "security" FROM "security";"""))
-    op.execute(sa.text("""REVOKE UPDATE, SELECT, INSERT ON TABLE "orders" FROM "order_terminal";"""))
+    op.execute(sa.text("""REVOKE UPDATE, INSERT, SELECT ON TABLE "orders" FROM "order_terminal";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "orders" FROM "bartenders";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "game_types" FROM "players";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "game_types" FROM "dealers";"""))
@@ -192,17 +196,17 @@ def downgrade() -> None:
     op.execute(sa.text("""REVOKE SELECT ON TABLE "dealers" FROM "dealers";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "clients" FROM "security";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "cards_to_clients_dispenser" FROM "security";"""))
-    op.execute(sa.text("""REVOKE SELECT, INSERT ON TABLE "cards_to_clients_dispenser" FROM "card_dispenser";"""))
+    op.execute(sa.text("""REVOKE INSERT, SELECT ON TABLE "cards_to_clients_dispenser" FROM "card_dispenser";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "card_bid_within_session" FROM "players";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "card_bid_within_session" FROM "dealers";"""))
     op.execute(sa.text("""REVOKE SELECT, INSERT ON TABLE "card_bid_within_session" FROM "bid_terminal";"""))
     op.execute(sa.text("""REVOKE SELECT, UPDATE ON TABLE "card" FROM "order_terminal";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "card" FROM "card_reader";"""))
-    op.execute(sa.text("""REVOKE INSERT, SELECT ON TABLE "card" FROM "card_dispenser";"""))
+    op.execute(sa.text("""REVOKE SELECT, INSERT ON TABLE "card" FROM "card_dispenser";"""))
     op.execute(sa.text("""REVOKE SELECT, UPDATE ON TABLE "card" FROM "bid_terminal";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "bartenders" FROM "order_terminal";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "bartenders" FROM "bartenders";"""))
-    op.execute(sa.text("""REVOKE UPDATE, SELECT ON TABLE "bar_supplies" FROM "order_terminal";"""))
+    op.execute(sa.text("""REVOKE SELECT, UPDATE ON TABLE "bar_supplies" FROM "order_terminal";"""))
     op.execute(sa.text("""REVOKE SELECT ON TABLE "bar_supplies" FROM "bartenders";"""))
     op.execute(sa.text("""REVOKE USAGE ON SEQUENCE "split_order_by_card_split_order_id_seq" FROM "order_terminal";"""))
     op.execute(sa.text("""REVOKE USAGE ON SEQUENCE "orders_order_id_seq" FROM "order_terminal";"""))

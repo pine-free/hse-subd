@@ -14,10 +14,10 @@ ensure_dealer_correct = PGFunction(
             IF (TG_OP = 'INSERT') THEN
                 SELECT type_id INTO table_type_id FROM Tables WHERE table_id = NEW.table_id;
                 SELECT is_supervised INTO should_be_supervised FROM game_types WHERE type_id = table_type_id;
-                IF (should_be_supervised = 1 AND NEW.staff_id IS NULL) THEN
+                IF (should_be_supervised = true AND NEW.staff_id IS NULL) THEN
                     RAISE EXCEPTION 'Game type % should be supervised, missing dealer for session %',
                         table_type_id, NEW.session_id;
-                ELSIF (should_be_supervised = 0 AND NEW.staff_id IS NOT NULL) THEN
+                ELSIF (should_be_supervised = false AND NEW.staff_id IS NOT NULL) THEN
                     RAISE EXCEPTION 'Game type % should not be supervised, found dealer % for session %',
                         table_type_id, NEW.staff_id, NEW.session_id;
                 END IF;
@@ -49,13 +49,16 @@ update_card_bid = PGFunction(
     RETURNS TRIGGER AS $update_card_bid$
     DECLARE
         card_balance integer;
+        money_delta integer;
     BEGIN
         IF (TG_OP = 'INSERT') THEN
             SELECT balance FROM card INTO card_balance WHERE card_id = NEW.card_id;
+            money_delta := NEW.bid_amount - NEW.money_gain;
             IF (NEW.bid_amount > card_balance) THEN
                 RAISE EXCEPTION 'Cannot bet more money than the card has';
             END IF;
-            UPDATE card SET balance = balance - NEW.bid_amount + NEW.money_gain WHERE card_id = NEW.card_id;
+            UPDATE card SET balance = balance - money_delta WHERE card_id = NEW.card_id;
+            UPDATE tables SET balance = balance + money_delta WHERE table_id = (SELECT table_id FROM session_tables WHERE session_id = NEW.session_id);
         END IF;
         RETURN NULL;
     END;
